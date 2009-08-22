@@ -1,0 +1,8 @@
+[Activity]
+name = Webquest
+activity_version = 1
+bundle_id = org.sugarlabs.WebquestActivity
+icon = activity-webquest
+exec = sugar-activity activity.WebquestActivity -s
+mime_types = text/xml
+license = GPLv2+
