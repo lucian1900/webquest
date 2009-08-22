@@ -1,3 +1,5 @@
+from gettext import gettext as _
+
 from sugar.graphics.toolbarbox import ToolbarBox
 from sugar.activity.widgets import ActivityToolbarButton
 from sugar.activity.widgets import StopButton
