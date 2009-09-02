@@ -1,17 +1,29 @@
 from gettext import gettext as _
+import logging
 
-from sugar.graphics.toolbarbox import ToolbarBox
-from sugar.activity.widgets import ActivityToolbarButton
-from sugar.activity.widgets import StopButton
+import gtk
 
-class PrimaryToolbar(ToolbarBox):
+from sugar.graphics.toolbutton import ToolButton
+from sugar.graphics.alert import Alert
+from sugar.graphics.icon import Icon
+
+class WebquestToolbar(gtk.Toolbar):
     def __init__(self, act):
-        ToolbarBox.__init__(self)
+        gtk.Toolbar.__init__(self)
         
         self._activity = act
         
-        activity_button = ActivityToolbarButton(self._activity)
-        self.toolbar.insert(activity_button, 0)
+        self._hello = ToolButton('emblem-favorite')
+        self._hello.set_tooltip('Hello')
+        self._hello.connect('clicked', self.__hello_cb)
+        self.insert(self._hello, -1)
+        self._hello.show()
         
-        stop_button = StopButton(self._activity)
-        self.toolbar.insert(stop_button, -1)
+    def __hello_cb(self, button):
+        logging.debug('hello')
+        
+class BundleToolbar(gtk.Toolbar):
+    def __init__(self, act):
+        gtk.Toolbar.__init__(self)
+    
+        self._activity = act

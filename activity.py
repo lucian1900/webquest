@@ -6,7 +6,7 @@ import gtk
 
 from sugar.activity import activity
 
-import toolbars
+from toolbars import WebquestToolbar, BundleToolbar
 import feed
 
 class WebquestActivity(activity.Activity):
@@ -14,9 +14,16 @@ class WebquestActivity(activity.Activity):
         activity.Activity.__init__(self, handle)
         
         # toolbars
-        self._primary_toolbar = toolbars.PrimaryToolbar(self)
-        self._primary_toolbar.show_all()
-        self.set_toolbar_box(self._primary_toolbar)
+        toolbox = activity.ActivityToolbox(self)
+        
+        self._webq_toolbar = WebquestToolbar(self)
+        toolbox.add_toolbar(_('Webquests'), self._webq_toolbar)
+        
+        self._bundle_toolbar = BundleToolbar(self)
+        toolbox.add_toolbar(_('Bundle'), self._bundle_toolbar)
+        
+        self.set_toolbox(toolbox)
+        toolbox.show()
         
         # tabs
         self._notebook = gtk.Notebook()
@@ -25,9 +32,9 @@ class WebquestActivity(activity.Activity):
         
         self._feed_list = feed.FeedList()
         self._feed_list.show_all()
-        self._notebook.append_page(self._feed_list, gtk.Label(_('Feeds')))
+        self._notebook.append_page(self._feed_list, gtk.Label(_('WebQuests')))
+        self._feed_list.uri = '/media/desktop/webquest_rss.xml' # hard-coded
         
-
         
     def read_file(self, file_path):
         pass
