@@ -6,6 +6,7 @@ import gtk
 from sugar.graphics.toolbutton import ToolButton
 from sugar.graphics.alert import Alert
 from sugar.graphics.icon import Icon
+from sugar._sugarext import AddressEntry
 
 class WebquestToolbar(gtk.Toolbar):
     def __init__(self, act):
@@ -13,14 +14,35 @@ class WebquestToolbar(gtk.Toolbar):
         
         self._activity = act
         
-        self._hello = ToolButton('emblem-favorite')
-        self._hello.set_tooltip('Hello')
-        self._hello.connect('clicked', self.__hello_cb)
-        self.insert(self._hello, -1)
-        self._hello.show()
+        self._back = ToolButton('go-previous-paired')
+        self._back.set_tooltip(_('Back'))
+        self._back.props.sensitive = False
+        self._back.connect('clicked', self.__go_back_cb)
+        self.insert(self._back, -1)
+        self._back.show()
         
-    def __hello_cb(self, button):
-        logging.debug('hello')
+        self._entry = gtk.Entry()
+        self._entry.set_text(self._activity.DEFAULT_FEED_URI)
+        self._entry.connect('activate', self.__entry_activate_cb)
+        self._entry.show()
+        
+        entry_item = gtk.ToolItem()
+        entry_item.set_expand(True)
+        entry_item.add(self._entry)
+        self.insert(entry_item, -1)
+        self._entry.show
+        
+    def __entry_activate_cb(self, entry):
+        self._activity.load_feed(entry.get_text())
+        
+    def __go_back_cb(self, button):
+        self._activity.show_feed_list()
+        
+    def enable_back(self):
+        self._back.props.sensitive = True
+    
+    def disable_back(self):
+        self._back.props.sensitive = False
         
 class BundleToolbar(gtk.Toolbar):
     def __init__(self, act):
