@@ -22,9 +22,12 @@ class WebquestView(gtk.ScrolledWindow):
         
         self._description = gtk.Label('placeholder description')
         self._vbox.pack_start(self._description, expand=False)
+        self._description.justify = gtk.JUSTIFY_FILL
         self._description.show()
-        
+                
     def set(self, uri, summary):
         self._summary.set_markup(summary)
+        
+        self._description.set_markup('''\n<b>Detailed description (placeholder)</b>\nasdassdfasdgadsssssssssssssasdasdfasgfgdhsrgasdfaefegfsgdfasdkjnasdkjas;ldkfsadlkfjsadkfaslkdcmnaleiiflsjf\ng\nfdgs\nfdgsdfgdfgsdfg\n\n<b>Tasks</b>\n  1. asda\n  2. asd\n  3. 4545''')
         
         self._feed = feedparser.parse(uri)

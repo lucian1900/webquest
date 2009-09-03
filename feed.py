@@ -57,10 +57,17 @@ class FeedList(gtk.ScrolledWindow):
         for i, e in enumerate(self._feed.entries):
             title = u'<b>%s</b>' % e.title
             descr = e.description
-            date = u'<b>Date</b>: %s' % e.updated
-            rating = u'\u2605' * 5
             
-            row = '\n'.join([title, descr, date, rating])
+            t = e.updated_parsed
+            date = u'<b>Date</b>: %s %s %s' % (t.tm_mday, t.tm_mon, t.tm_year)
+            
+            rating_head = u'<span foreground="#000">%s</span>' \
+                          % u'\u2605' * int(e.comments)
+            rating_tail = u'<span foreground="#aaa">%s</span>' \
+                          % u'\u2605' * (5-int(e.comments))
+            rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
+            
+            row = '\n'.join([title, descr, date + rating])
             model.append([i, row])
 
     
