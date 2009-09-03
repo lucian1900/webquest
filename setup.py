@@ -16,7 +16,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-from sugar.activity import bundlebuilder
-
-bundlebuilder.start()
-
+#!/usr/bin/env python
+try:
+    from sugar.activity import bundlebuilder
+    bundlebuilder.start()
+except ImportError:
+    import os
+    os.system("find ./ | sed 's,^./,Webquest.activity/,g' > MANIFEST")
+    os.chdir('..')
+    os.system('zip -r Webquest.xo Webquest.activity')
+    os.system('mv Webquest.xo ./Webquest.activity')
+    os.chdir('Webquest.activity')

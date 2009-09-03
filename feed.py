@@ -1,3 +1,19 @@
+# Copyright (C) 2009, Lucian Branescu Mihaila
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 import time
 from gettext import gettext as _
 import logging
@@ -5,6 +21,8 @@ import logging
 import gobject
 import gtk
 import feedparser
+
+from sugar.graphics.alert import NotifyAlert
 
 class FeedList(gtk.ScrolledWindow):
     __gtype_name__ = "SugarFeedList"
@@ -19,7 +37,7 @@ class FeedList(gtk.ScrolledWindow):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         
         self.uri = None
-        self._feed = None
+        self.feed = None
         
         self._tree_view = gtk.TreeView()
         self.add(self._tree_view)
@@ -37,39 +55,46 @@ class FeedList(gtk.ScrolledWindow):
         self._tree_view.append_column(column)
         self._tree_view.set_search_column(0)
         self._tree_view.props.headers_visible = False
-        
-        self.update()
-        
+                
     def __selection_changed_cb(self, selection):
         model, tree_iter = selection.get_selected()
         index = model.get_value(tree_iter, 0)
-        uri = self._feed.entries[index].links[0].href
+        uri = self.feed.entries[index].links[0].href
         summary = model.get_value(tree_iter, 1)
         
         self.emit('item-selected', uri, summary)
     
-    def update(self):
+    def update(self, uri):
+        self.uri = uri
+        self.feed = feedparser.parse(uri)
+        
+#        gobject.timeout_add(100, self._update)
+    
+#    def _update(self):
         model = self._tree_view.get_model()
+        open('/media/desktop/feed.json', 'w').write(str(self.feed))        
         
-        self._feed = feedparser.parse(self.uri)
-        logging.debug(self._feed)
-        
-        for i, e in enumerate(self._feed.entries):
+        for i, e in enumerate(self.feed.entries):
             title = u'<b>%s</b>' % e.title
-            descr = e.description
-            
-            t = e.updated_parsed
-            date = u'<b>Date</b>: %s %s %s' % (t.tm_mday, t.tm_mon, t.tm_year)
+            descr = unicode(e.description)
+            date = u'<b>Date</b>: '
+            # WORKAROUND http://code.google.com/p/feedparser/issues/detail?id=52            
+            try:
+                t = time.strptime(e.updated, "%a, %d/%m/%Y - %H:%M")
+            except ValueError:
+                date += 'Unknown'
+            else:
+                date += time.strftime('%d %b %Y', t)
             
             rating_head = u'<span foreground="#000">%s</span>' \
-                          % u'\u2605' * int(e.comments)
+                          % u'\u2605' * int(3)
             rating_tail = u'<span foreground="#aaa">%s</span>' \
-                          % u'\u2605' * (5-int(e.comments))
+                          % u'\u2605' * (5-int(3))
             rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
+            
             
             row = '\n'.join([title, descr, date + rating])
             model.append([i, row])
-
     
 class FeedItem(gtk.VBox):
     __gtype_name__ = "SugarFeedItem"
