@@ -31,29 +31,29 @@ class WebquestActivity(activity.Activity):
         
         
         # tabs
-        self._notebook = gtk.Notebook()
-        self._notebook.show()
-        self.set_canvas(self._notebook)
+        self._hbox = gtk.HBox()
+        self.set_canvas(self._hbox)
+        self._hbox.show()
         
         self._feed_list = feed.FeedList()
+        self._hbox.pack_start(self._feed_list)
         self._feed_list.show_all()
-        self._notebook.append_page(self._feed_list, gtk.Label(_('WebQuests')))
         self._feed_list.connect('item-selected', self.__show_webquest_cb)        
         
         self._webquest_view = webquest.WebquestView()
-        self._webquest_view.show_all()
-        self._notebook.append_page(self._webquest_view,
-                                   gtk.Label(_('Activity')))
+        self._hbox.pack_start(self._webquest_view)
                                    
         self.load_feed(self.DEFAULT_FEED_URI)
         
     def __show_webquest_cb(self, feed_list, uri, summary):
         self._webquest_view.set(uri, summary)
-        self._notebook.set_current_page(1)
+        self._feed_list.hide()
+        self._webquest_view.show()
         self._webq_toolbar.enable_back()
         
     def show_feed_list(self):
-        self._notebook.set_current_page(0)
+        self._webquest_view.hide()
+        self._feed_list.show()
         self._webq_toolbar.disable_back()
         
     def load_feed(self, uri):

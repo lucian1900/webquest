@@ -12,14 +12,17 @@ class WebquestView(gtk.ScrolledWindow):
         
         self._feed = None
         
-        self._view = gtk.VBox(spacing=5)
-        self.add(self._view)
+        self._vbox = gtk.VBox(spacing=5)
+        self.add(self._vbox)
+        self._vbox.show()
         
         self._summary = gtk.Label('placeholder summary')
-        self._view.pack_start(self._summary, expand=False)
+        self._vbox.pack_start(self._summary, expand=False)
+        self._summary.show()
         
         self._description = gtk.Label('placeholder description')
-        self._view.pack_start(self._description, expand=False)
+        self._vbox.pack_start(self._description, expand=False)
+        self._description.show()
         
     def set(self, uri, summary):
         self._summary.set_markup(summary)

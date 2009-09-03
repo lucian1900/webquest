@@ -23,8 +23,9 @@ class FeedList(gtk.ScrolledWindow):
         
         self._tree_view = gtk.TreeView()
         self.add(self._tree_view)
-        self._tree_view.set_model(gtk.ListStore(int, str))        
+        self._tree_view.show()      
         
+        self._tree_view.set_model(gtk.ListStore(int, str))  
         selection = self._tree_view.get_selection()
         selection.connect('changed', self.__selection_changed_cb)
         
@@ -32,6 +33,7 @@ class FeedList(gtk.ScrolledWindow):
         column = gtk.TreeViewColumn()
         column.pack_start(cell, True)
         column.add_attribute(cell, 'markup', 1)
+        
         self._tree_view.append_column(column)
         self._tree_view.set_search_column(0)
         self._tree_view.props.headers_visible = False
@@ -53,9 +55,13 @@ class FeedList(gtk.ScrolledWindow):
         logging.debug(self._feed)
         
         for i, e in enumerate(self._feed.entries):
-            column = '<b>%s</b>\n%s\n<b>Date</b>: %s' \
-                            % (e.title, e.description, e.updated)
-            model.append([i, column])
+            title = u'<b>%s</b>' % e.title
+            descr = e.description
+            date = u'<b>Date</b>: %s' % e.updated
+            rating = u'\u2605' * 5
+            
+            row = '\n'.join([title, descr, date, rating])
+            model.append([i, row])
 
     
 class FeedItem(gtk.VBox):
