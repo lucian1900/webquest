@@ -40,6 +40,7 @@ class WebquestView(gtk.ScrolledWindow):
         self._description = gtk.Label()
         self._vbox.pack_start(self._description, expand=False)
         self._description.set_alignment(0.12,0)
+        self._description.set_line_wrap(True)
         self._description.show()
                 
     def set(self, uri, summary):

@@ -20,6 +20,7 @@ import logging
 
 import gobject
 import gtk
+import pango
 import feedparser
 
 from sugar.graphics.alert import NotifyAlert
@@ -34,7 +35,7 @@ class FeedList(gtk.ScrolledWindow):
     
     def __init__(self):
         gtk.ScrolledWindow.__init__(self)
-        self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         
         self.uri = None
         self.feed = None
@@ -48,8 +49,10 @@ class FeedList(gtk.ScrolledWindow):
         selection.connect('changed', self.__selection_changed_cb)
         
         cell = gtk.CellRendererText()
+        cell.props.wrap_mode = pango.WRAP_WORD
+        cell.props.wrap_width = 800
         column = gtk.TreeViewColumn()
-        column.pack_start(cell, True)
+        column.pack_start(cell, expand=False)
         column.add_attribute(cell, 'markup', 1)
         
         self._tree_view.append_column(column)
@@ -68,17 +71,13 @@ class FeedList(gtk.ScrolledWindow):
         self.uri = uri
         self.feed = feedparser.parse(uri)
         
-#        gobject.timeout_add(100, self._update)
-    
-#    def _update(self):
         model = self._tree_view.get_model()
-        open('/media/desktop/feed.json', 'w').write(str(self.feed))        
         
         for i, e in enumerate(self.feed.entries):
             title = u'<b>%s</b>' % e.title
             descr = unicode(e.description)
             date = u'<b>Date</b>: '
-            # WORKAROUND http://code.google.com/p/feedparser/issues/detail?id=52            
+            # HACK http://code.google.com/p/feedparser/issues/detail?id=52            
             try:
                 t = time.strptime(e.updated, "%a, %d/%m/%Y - %H:%M")
             except ValueError:
@@ -91,7 +90,6 @@ class FeedList(gtk.ScrolledWindow):
             rating_tail = u'<span foreground="#aaa">%s</span>' \
                           % u'\u2605' * (5-int(3))
             rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
-            
             
             row = '\n'.join([title, descr, date + rating])
             model.append([i, row])

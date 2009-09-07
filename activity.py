@@ -19,12 +19,17 @@ import logging
 from gettext import gettext as _
 
 import gtk
+import telepathy
 
 from sugar.activity import activity
 
 from toolbars import WebquestToolbar, BundleToolbar
 import feed
 import webquest
+
+SERVICE = 'org.sugarlabs.Webquest'
+IFACE = SERVICE
+PATH = '/org/sugarlabs/Webquest'
 
 class WebquestActivity(activity.Activity):
     DEFAULT_FEED_URI = 'http://webquest.rafaelsilva.net/webquest/feed'
@@ -54,7 +59,7 @@ class WebquestActivity(activity.Activity):
         self._hbox.pack_start(self._feed_list)
         self._feed_list.show_all()
         self._feed_list.connect('item-selected', self.__show_webquest_cb)
-        self.load_feed(self.DEFAULT_FEED_URI)     
+        #self.load_feed(self.DEFAULT_FEED_URI)     
         
         self._webquest_view = webquest.WebquestView()
         self._hbox.pack_start(self._webquest_view)
@@ -62,6 +67,98 @@ class WebquestActivity(activity.Activity):
         self.connect('shared', self._shared_cb)
         self.connect('joined', self._joined_cb)
         
+    def _shared_cb(self, activity):
+        self._logger.debug('My activity was shared')
+        self._alert('Shared', 'The activity is shared')
+        self.initiating = True
+        self._sharing_setup()
+
+        self._logger.debug('This is my activity: making a tube...')
+        id = self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].OfferDBusTube(
+            SERVICE, {})
+        
+    def _joined_cb(self, activity):
+        if not self.shared_activity:
+            return
+
+        self._logger.debug('Joined an existing shared activity')
+        self._alert('Joined', 'Joined a shared activity')
+        self.initiating = False
+        self._sharing_setup()
+
+        self._logger.debug('This is not my activity: waiting for a tube...')
+        self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].ListTubes(
+            reply_handler=self._list_tubes_reply_cb,
+            error_handler=self._list_tubes_error_cb)
+            
+    def _sharing_setup(self):
+        if self.shared_activity is None:
+            self._logger.error('Failed to share or join activity')
+            return
+
+        self.conn = self.shared_activity.telepathy_conn
+        self.tubes_chan = self.shared_activity.telepathy_tubes_chan
+        self.text_chan = self.shared_activity.telepathy_text_chan
+
+        self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].connect_to_signal(
+            'NewTube', self._new_tube_cb)
+
+        self.shared_activity.connect('buddy-joined', self._buddy_joined_cb)
+        self.shared_activity.connect('buddy-left', self._buddy_left_cb)
+
+        self.entry.set_sensitive(True)
+        self.entry.grab_focus()
+
+        # Optional - included for example:
+        # Find out who's already in the shared activity:
+        for buddy in self.shared_activity.get_joined_buddies():
+            self._logger.debug('Buddy %s is already in the activity',
+                               buddy.props.nick)
+                               
+
+    def _buddy_joined_cb (self, activity, buddy):
+        """Called when a buddy joins the shared activity.
+
+        This doesn't do much here as HelloMesh doesn't have much 
+        functionality. It's up to you do do interesting things
+        with the Buddy...
+        """
+        self._logger.debug('Buddy %s joined', buddy.props.nick)
+        self._alert('Buddy joined', '%s joined' % buddy.props.nick)
+
+    def _buddy_left_cb (self, activity, buddy):
+        """Called when a buddy leaves the shared activity.
+
+        This doesn't do much here as HelloMesh doesn't have much 
+        functionality. It's up to you do do interesting things
+        with the Buddy...
+        """
+        self._logger.debug('Buddy %s left', buddy.props.nick)
+        self._alert('Buddy left', '%s left' % buddy.props.nick)
+        
+    def _list_tubes_reply_cb(self, tubes):
+        for tube_info in tubes:
+            self._new_tube_cb(*tube_info)
+
+    def _list_tubes_error_cb(self, e):
+        self._logger.error('ListTubes() failed: %s', e)
+        
+    def _new_tube_cb(self, id, initiator, type, service, params, state):
+        self._logger.debug('New tube: ID=%d initator=%d type=%d service=%s '
+                     'params=%r state=%d', id, initiator, type, service,
+                     params, state)
+        if (type == telepathy.TUBE_TYPE_DBUS and
+            service == SERVICE):
+            if state == telepathy.TUBE_STATE_LOCAL_PENDING:
+                self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].AcceptDBusTube(id)
+            tube_conn = TubeConnection(self.conn,
+                self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES],
+                id, group_iface=self.text_chan[telepathy.CHANNEL_INTERFACE_GROUP])
+            self.hellotube = TextSync(tube_conn, self.initiating,
+                                      self.entry_text_update_cb,
+                                      self._alert,
+                                      self._get_buddy)
+          
     def __show_webquest_cb(self, feed_list, uri, summary):
         self._webquest_view.set(uri, summary)
         self._feed_list.hide()
