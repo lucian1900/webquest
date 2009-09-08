@@ -42,7 +42,7 @@ class FeedList(gtk.ScrolledWindow):
         
         self._tree_view = gtk.TreeView()
         self.add(self._tree_view)
-        self._tree_view.show()      
+        self._tree_view.show()
         
         self._tree_view.set_model(gtk.ListStore(int, str))  
         selection = self._tree_view.get_selection()
@@ -62,7 +62,7 @@ class FeedList(gtk.ScrolledWindow):
     def __selection_changed_cb(self, selection):
         model, tree_iter = selection.get_selected()
         index = model.get_value(tree_iter, 0)
-        uri = self.feed.entries[index].links[0].href
+        uri = self.feed.entries[index].links[0]
         summary = model.get_value(tree_iter, 1)
         
         self.emit('item-selected', uri, summary)

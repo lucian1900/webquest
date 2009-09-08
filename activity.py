@@ -20,6 +20,7 @@ from gettext import gettext as _
 
 import gtk
 import telepathy
+import cjson
 
 from sugar.activity import activity
 
@@ -36,6 +37,8 @@ class WebquestActivity(activity.Activity):
     
     def __init__(self, handle):
         activity.Activity.__init__(self, handle)
+        
+        self._logger = logging.getLogger('webquest-activity')
         
         # toolbars
         toolbox = activity.ActivityToolbox(self)
@@ -124,7 +127,7 @@ class WebquestActivity(activity.Activity):
         with the Buddy...
         """
         self._logger.debug('Buddy %s joined', buddy.props.nick)
-        self._alert('Buddy joined', '%s joined' % buddy.props.nick)
+        self._webquest_view.add_buddy(buddy.props.nick)
 
     def _buddy_left_cb (self, activity, buddy):
         """Called when a buddy leaves the shared activity.
@@ -134,7 +137,7 @@ class WebquestActivity(activity.Activity):
         with the Buddy...
         """
         self._logger.debug('Buddy %s left', buddy.props.nick)
-        self._alert('Buddy left', '%s left' % buddy.props.nick)
+        self._webquest_view.remove_buddy(buddy.props.nick)
         
     def _list_tubes_reply_cb(self, tubes):
         for tube_info in tubes:
