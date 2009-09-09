@@ -17,11 +17,12 @@
 import time
 from gettext import gettext as _
 import logging
+from xml.etree import ElementTree
+import urllib2
 
 import gobject
 import gtk
 import pango
-import feedparser
 
 from sugar.graphics.alert import NotifyAlert
 
@@ -38,7 +39,7 @@ class FeedList(gtk.ScrolledWindow):
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         
         self.uri = None
-        self.feed = None
+        self._feed = None
         
         self._tree_view = gtk.TreeView()
         self.add(self._tree_view)
@@ -62,42 +63,38 @@ class FeedList(gtk.ScrolledWindow):
     def __selection_changed_cb(self, selection):
         model, tree_iter = selection.get_selected()
         index = model.get_value(tree_iter, 0)
-        uri = self.feed.entries[index].links[0]
+        uri = self._feed.findall('item')[index].find('source').attrib['url']
         summary = model.get_value(tree_iter, 1)
         
         self.emit('item-selected', uri, summary)
     
     def update(self, uri):
         self.uri = uri
-        self.feed = feedparser.parse(uri)
-        
+        xml = urllib2.urlopen(uri).read()
+        self._feed = ElementTree.fromstring(xml).find('channel')
         model = self._tree_view.get_model()
         
-        for i, e in enumerate(self.feed.entries):
-            title = u'<b>%s</b>' % e.title
-            descr = unicode(e.description)
+        for i, e in enumerate(self._feed.findall('item')):
+            
+            logging.debug('@@@@@ %s' % e)
+            title = u'<b>%s</b>' % e.find('title').text
+            descr = unicode(e.find('description').text)
             date = u'<b>Date</b>: '
-            # HACK http://code.google.com/p/feedparser/issues/detail?id=52            
             try:
-                t = time.strptime(e.updated, "%a, %d/%m/%Y - %H:%M")
+                t = time.strptime(e.find('pubDate').text, 
+                                  "%a, %d/%m/%Y - %H:%M")
             except ValueError:
                 date += 'Unknown'
             else:
                 date += time.strftime('%d %b %Y', t)
             
-            rating_head = u'<span foreground="#000">%s</span>' \
-                          % u'\u2605' * int(3)
-            rating_tail = u'<span foreground="#aaa">%s</span>' \
-                          % u'\u2605' * (5-int(3))
-            rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
+            #rating_head = u'<span foreground="#000">%s</span>' \
+            #              % u'\u2605' * int(3)
+            #rating_tail = u'<span foreground="#aaa">%s</span>' \
+            #              % u'\u2605' * (5-int(e.find('comments')))
+            #rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
             
-            row = '\n'.join([title, descr, date + rating])
+            row = '\n'.join([title, descr, date])# + rating])
             model.append([i, row])
-    
-class FeedItem(gtk.VBox):
-    __gtype_name__ = "SugarFeedItem"
-    
-    def __init__(self):
-        gtk.VBox.__init__(self)
         
         

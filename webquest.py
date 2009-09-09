@@ -16,6 +16,8 @@
 
 from gettext import gettext as _
 import logging
+import urllib2
+from xml.etree import ElementTree
 
 import gtk
 import pango
@@ -26,9 +28,7 @@ class WebquestView(gtk.ScrolledWindow):
     def __init__(self):
         gtk.ScrolledWindow.__init__(self)
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        
-        self.feed = None
-        
+                
         self._vbox = gtk.VBox(spacing=5)
         self.add(self._vbox)
         self._vbox.show()
@@ -57,7 +57,7 @@ class WebquestView(gtk.ScrolledWindow):
         
         self._tree_view.set_model(gtk.ListStore(str, str))  
         selection = self._tree_view.get_selection()
-        selection.connect('changed', self.__selection_changed_cb)
+        #selection.connect('changed', self.__selection_changed_cb)
         
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
@@ -71,9 +71,19 @@ class WebquestView(gtk.ScrolledWindow):
         self._tree_view.props.headers_visible = False
         
     def set(self, uri, summary):
+        logging.debug('##### %s' % uri)
+        xml = urllib2.urlopen(uri).read()
+        feed = ElementTree.fromstring(xml).find('webquest')
+        
         self._summary.set_markup(summary)
         
-        self._description.set_markup('''\n<b>Detailed description (placeholder)</b>\nasdassdfasdgdhsrgasdfaefegfsgdfasdkjnasdkjas;ldkfsadlkfjsadkfaslkdcmnaleiiflsjf\ng\nfdgs\nfdgsdfgdfgsdfg\n\n<b>Tasks</b>\n  1. asda\n  2. asd\n  3. 4545''')
+        
+        self._description.set_markup('<b>%s</b>\n' % _('Process Description') + 
+                                     feed.find('process-description').text)
+        tasks_text = u'<b>%s</b>\n' % _('Tasks')
+        for i, e in enumerate(feed.find('tasks').getchildren()):
+            tasks_text += i + '. ' + e.find('task-description').text + '\n'
+        self._tasks.set_markup(tasks_text)
         
     def add_buddy(self, nick):
         model = self._tree_view.get_model()
@@ -87,4 +97,58 @@ class WebquestView(gtk.ScrolledWindow):
         nick = model.get_value(tree_iter, 0)
         if nick == user_data:
             model.remove(tree_iter)
-        
+            
+def parse(uri):
+    data = urllib2.urlopen(uri).read()
+    tree = ElementTree.fromstring(data)
+    d = dict()
+    
+    return XmlDictConfig(tree)      
+
+class XmlDictConfig(dict):
+    '''
+    Example usage:
+
+    >>> tree = ElementTree.parse('your_file.xml')
+    >>> root = tree.getroot()
+    >>> xmldict = XmlDictConfig(root)
+
+    Or, if you want to use an XML string:
+
+    >>> root = ElementTree.XML(xml_string)
+    >>> xmldict = XmlDictConfig(root)
+
+    And then use xmldict for what it is... a dict.
+    
+    From http://code.activestate.com/recipes/410469/
+    '''
+    def __init__(self, parent_element):
+        if parent_element.items():
+            self.update(dict(parent_element.items()))
+        for element in parent_element:
+            if element:
+                # treat like dict - we assume that if the first two tags
+                # in a series are different, then they are all different.
+                if len(element) == 1 or element[0].tag != element[1].tag:
+                    aDict = XmlDictConfig(element)
+                # treat like list - we assume that if the first two tags
+                # in a series are the same, then the rest are the same.
+                else:
+                    # here, we put the list in dictionary; the key is the
+                    # tag name the list elements all share in common, and
+                    # the value is the list itself 
+                    aDict = {element[0].tag: XmlListConfig(element)}
+                # if the tag has attributes, add those to the dict
+                if element.items():
+                    aDict.update(dict(element.items()))
+                self.update({element.tag: aDict})
+            # this assumes that if you've got an attribute in a tag,
+            # you won't be having any text. This may or may not be a 
+            # good idea -- time will tell. It works for the way we are
+            # currently doing XML configuration files...
+            elif element.items():
+                self.update({element.tag: dict(element.items())})
+            # finally, if there are no child tags and no attributes, extract
+            # the text
+            else:
+                self.update({element.tag: element.text})

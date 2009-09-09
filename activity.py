@@ -67,8 +67,8 @@ class WebquestActivity(activity.Activity):
         self._webquest_view = webquest.WebquestView()
         self._hbox.pack_start(self._webquest_view)
                                    
-        self.connect('shared', self._shared_cb)
-        self.connect('joined', self._joined_cb)
+        #self.connect('shared', self._shared_cb)
+        #self.connect('joined', self._joined_cb)
         
     def _shared_cb(self, activity):
         self._logger.debug('My activity was shared')
