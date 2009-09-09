@@ -82,7 +82,7 @@ class WebquestView(gtk.ScrolledWindow):
                                      feed.find('process-description').text)
         tasks_text = u'<b>%s</b>\n' % _('Tasks')
         for i, e in enumerate(feed.find('tasks').getchildren()):
-            tasks_text += i + '. ' + e.find('task-description').text + '\n'
+            tasks_text += '%s. %s\n' % (i+1, e.find('task-description').text)
         self._tasks.set_markup(tasks_text)
         
     def add_buddy(self, nick):
