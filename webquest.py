@@ -39,25 +39,44 @@ class WebquestView(gtk.ScrolledWindow):
         self._summary.show()
         
         self._description = gtk.Label()
-        self._vbox.pack_start(self._description, expand=False)
+        self._vbox.pack_start(self._description, expand=True)
         self._description.set_alignment(0.12,0)
         self._description.set_line_wrap(True)
         self._description.show()
                 
         self._tasks = gtk.Label()
-        self._vbox.pack_start(self._tasks, expand=False)
+        self._vbox.pack_start(self._tasks, expand=True)
         self._tasks.set_alignment(0.12,0)
         self._tasks.set_line_wrap(True)
         self._tasks.show()
         
-        # buddy list
-        self._tree_view = gtk.TreeView()
-        self.add(self._tree_view)
-        self._tree_view.show()
+        self._resources = gtk.TreeView()
+        self.add(self._resources)
+        self._resources.show()
         
-        self._tree_view.set_model(gtk.ListStore(str, str))  
-        selection = self._tree_view.get_selection()
-        #selection.connect('changed', self.__selection_changed_cb)
+        self._resources.set_model(gtk.ListStore(str, str))  
+        selection = self._resources.get_selection()
+        selection.connect('changed', self.__resource_selection_changed_cb)
+        
+        cell = gtk.CellRendererText()
+        cell.props.wrap_mode = pango.WRAP_WORD
+        cell.props.wrap_width = 800
+        column = gtk.TreeViewColumn()
+        column.pack_start(cell, expand=False)
+        column.add_attribute(cell, 'markup', 1)
+        
+        self._resources.append_column(column)
+        self._resources.set_search_column(0)
+        self._resources.props.headers_visible = False
+        
+        # buddy list
+        self._buddies = gtk.TreeView()
+        self.add(self._buddies)
+        self._buddies.show()
+        
+        self._buddies.set_model(gtk.ListStore(str, str))  
+        selection = self._buddies.get_selection()
+        selection.connect('changed', self.__buddy_selection_changed_cb)
         
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
@@ -66,9 +85,9 @@ class WebquestView(gtk.ScrolledWindow):
         column.pack_start(cell, expand=False)
         column.add_attribute(cell, 'markup', 1)
         
-        self._tree_view.append_column(column)
-        self._tree_view.set_search_column(0)
-        self._tree_view.props.headers_visible = False
+        self._buddies.append_column(column)
+        self._buddies.set_search_column(0)
+        self._buddies.props.headers_visible = True
         
     def set(self, uri, summary):
         logging.debug('##### %s' % uri)
@@ -76,27 +95,38 @@ class WebquestView(gtk.ScrolledWindow):
         feed = ElementTree.fromstring(xml).find('webquest')
         
         self._summary.set_markup(summary)
-        
-        
+    
         self._description.set_markup('<b>%s</b>\n' % _('Process Description') + 
                                      feed.find('process-description').text)
+    
         tasks_text = u'<b>%s</b>\n' % _('Tasks')
         for i, e in enumerate(feed.find('tasks').getchildren()):
             tasks_text += '%s. %s\n' % (i+1, e.find('task-description').text)
         self._tasks.set_markup(tasks_text)
         
+        model = self._resources.get_model()
+        for i in feed.find('references').getchildren():
+            model.append([i.find('reference-description').text,
+                       i.find('url').text])
+        
     def add_buddy(self, nick):
-        model = self._tree_view.get_model()
+        model = self._buddies.get_model()
         model.append([nick, _('none')])        
         
     def remove_buddy(self, nick):
-        model = self._tree_view.get_model()
+        model = self._buddies.get_model()
         model.foreach(self._remove_buddy_cb, nick)
         
     def _remove_buddy_cb(self, model, path, tree_iter, user_data):
         nick = model.get_value(tree_iter, 0)
         if nick == user_data:
             model.remove(tree_iter)
+            
+    def __resource_selection_changed_cb(self, selection):
+        pass
+    
+    def __buddy_selection_changed_cb(self, selection):
+        pass
             
 def parse(uri):
     data = urllib2.urlopen(uri).read()

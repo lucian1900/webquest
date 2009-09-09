@@ -79,22 +79,23 @@ class FeedList(gtk.ScrolledWindow):
             logging.debug('@@@@@ %s' % e)
             title = u'<b>%s</b>' % e.find('title').text
             descr = unicode(e.find('description').text)
-            date = u'<b>Date</b>: '
+            date = u'<b>%s</b>: ' % _('Date')
             try:
                 t = time.strptime(e.find('pubDate').text, 
-                                  "%a, %d/%m/%Y - %H:%M")
+                                  "%a, %m/%d/%Y - %H:%M")
             except ValueError:
                 date += 'Unknown'
             else:
                 date += time.strftime('%d %b %Y', t)
+                
+            rating_no = int(e.find('comments').text)
+            rating_head = u'<span foreground="#000">%s</span>' \
+                          % u'\u2605' * rating_no
+            rating_tail = u'<span foreground="#eee">%s</span>' \
+                          % u'\u2605' * (5 - rating_no)
+            rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
             
-            #rating_head = u'<span foreground="#000">%s</span>' \
-            #              % u'\u2605' * int(3)
-            #rating_tail = u'<span foreground="#aaa">%s</span>' \
-            #              % u'\u2605' * (5-int(e.find('comments')))
-            #rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
-            
-            row = '\n'.join([title, descr, date])# + rating])
+            row = '\n'.join([title, descr, date + rating])
             model.append([i, row])
         
         
