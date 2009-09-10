@@ -42,13 +42,12 @@ class FeedList(gtk.ScrolledWindow):
         self._feed = None
         
         self._tree_view = gtk.TreeView()
-        self.add(self._tree_view)
-        self._tree_view.show()
+        self.add_with_viewport(self._tree_view)
         
         self._tree_view.set_model(gtk.ListStore(int, str))  
         selection = self._tree_view.get_selection()
         selection.connect('changed', self.__selection_changed_cb)
-        
+                
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
         cell.props.wrap_width = 800
@@ -59,6 +58,8 @@ class FeedList(gtk.ScrolledWindow):
         self._tree_view.append_column(column)
         self._tree_view.set_search_column(0)
         self._tree_view.props.headers_visible = False
+        
+        self._tree_view.show()
                 
     def __selection_changed_cb(self, selection):
         model, tree_iter = selection.get_selected()
@@ -69,14 +70,14 @@ class FeedList(gtk.ScrolledWindow):
         self.emit('item-selected', uri, summary)
     
     def update(self, uri):
+        model = self._tree_view.get_model()
+        model.clear()
+        
         self.uri = uri
         xml = urllib2.urlopen(uri).read()
         self._feed = ElementTree.fromstring(xml).find('channel')
-        model = self._tree_view.get_model()
         
         for i, e in enumerate(self._feed.findall('item')):
-            
-            logging.debug('@@@@@ %s' % e)
             title = u'<b>%s</b>' % e.find('title').text
             descr = unicode(e.find('description').text)
             date = u'<b>%s</b>: ' % _('Date')
@@ -84,7 +85,7 @@ class FeedList(gtk.ScrolledWindow):
                 t = time.strptime(e.find('pubDate').text, 
                                   "%a, %m/%d/%Y - %H:%M")
             except ValueError:
-                date += 'Unknown'
+                date += _('unknown')
             else:
                 date += time.strftime('%d %b %Y', t)
                 
@@ -93,9 +94,10 @@ class FeedList(gtk.ScrolledWindow):
                           % u'\u2605' * rating_no
             rating_tail = u'<span foreground="#eee">%s</span>' \
                           % u'\u2605' * (5 - rating_no)
-            rating = '\t<b>Rating</b>: ' + rating_head + rating_tail
+            rating = '\t<b>%s</b>: ' % _('Rating') + rating_head + rating_tail
             
             row = '\n'.join([title, descr, date + rating])
             model.append([i, row])
+
         
         

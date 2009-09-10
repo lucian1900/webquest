@@ -73,3 +73,13 @@ class BundleToolbar(gtk.Toolbar):
         gtk.Toolbar.__init__(self)
     
         self._activity = act
+        
+        self._get = ToolButton('save-document')
+        self._get.set_tooltip(_('Add from Journal'))
+        self._get.props.sensitive = False
+        self._get.connect('clicked', self.__get_cb)
+        self.insert(self._get, -1)
+        self._get.show()
+        
+    def __get_cb(self, button):
+        pass

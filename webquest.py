@@ -29,29 +29,31 @@ class WebquestView(gtk.ScrolledWindow):
         gtk.ScrolledWindow.__init__(self)
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
                 
-        self._vbox = gtk.VBox(spacing=5)
-        self.add(self._vbox)
+        self._vbox = gtk.VBox(spacing=2)
+        self.add_with_viewport(self._vbox)
         self._vbox.show()
         
         self._summary = gtk.Label()
-        self._vbox.pack_start(self._summary, expand=False)
+        self._vbox.pack_start(self._summary, expand=True, fill=True)
         self._summary.set_line_wrap(True)
         self._summary.show()
         
         self._description = gtk.Label()
-        self._vbox.pack_start(self._description, expand=True)
-        self._description.set_alignment(0.12,0)
+        self._vbox.pack_start(self._description, expand=True, fill=True)
+        #self._description.set_alignment(0.12,0)
+        self._description.props.width_chars = 70
         self._description.set_line_wrap(True)
         self._description.show()
                 
         self._tasks = gtk.Label()
-        self._vbox.pack_start(self._tasks, expand=True)
-        self._tasks.set_alignment(0.12,0)
+        self._vbox.pack_start(self._tasks, expand=True, fill=True)
+        #self._tasks.set_alignment(0.12,0)
         self._tasks.set_line_wrap(True)
         self._tasks.show()
         
+        # Resources list
         self._resources = gtk.TreeView()
-        self.add(self._resources)
+        self._vbox.pack_start(self._resources)
         self._resources.show()
         
         self._resources.set_model(gtk.ListStore(str, str))  
@@ -71,7 +73,7 @@ class WebquestView(gtk.ScrolledWindow):
         
         # buddy list
         self._buddies = gtk.TreeView()
-        self.add(self._buddies)
+        self._vbox.pack_start(self._buddies)
         self._buddies.show()
         
         self._buddies.set_model(gtk.ListStore(str, str))  
@@ -80,17 +82,16 @@ class WebquestView(gtk.ScrolledWindow):
         
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
-        cell.props.wrap_width = 400
+        cell.props.wrap_width = 800
         column = gtk.TreeViewColumn()
         column.pack_start(cell, expand=False)
         column.add_attribute(cell, 'markup', 1)
         
         self._buddies.append_column(column)
         self._buddies.set_search_column(0)
-        self._buddies.props.headers_visible = True
+        self._buddies.props.headers_visible = False
         
     def set(self, uri, summary):
-        logging.debug('##### %s' % uri)
         xml = urllib2.urlopen(uri).read()
         feed = ElementTree.fromstring(xml).find('webquest')
         
@@ -106,8 +107,8 @@ class WebquestView(gtk.ScrolledWindow):
         
         model = self._resources.get_model()
         for i in feed.find('references').getchildren():
-            model.append([i.find('reference-description').text,
-                       i.find('url').text])
+            model.append(['<u>%s</u>' % i.find('reference-description').text,
+                          i.find('url').text])
         
     def add_buddy(self, nick):
         model = self._buddies.get_model()
@@ -127,58 +128,3 @@ class WebquestView(gtk.ScrolledWindow):
     
     def __buddy_selection_changed_cb(self, selection):
         pass
-            
-def parse(uri):
-    data = urllib2.urlopen(uri).read()
-    tree = ElementTree.fromstring(data)
-    d = dict()
-    
-    return XmlDictConfig(tree)      
-
-class XmlDictConfig(dict):
-    '''
-    Example usage:
-
-    >>> tree = ElementTree.parse('your_file.xml')
-    >>> root = tree.getroot()
-    >>> xmldict = XmlDictConfig(root)
-
-    Or, if you want to use an XML string:
-
-    >>> root = ElementTree.XML(xml_string)
-    >>> xmldict = XmlDictConfig(root)
-
-    And then use xmldict for what it is... a dict.
-    
-    From http://code.activestate.com/recipes/410469/
-    '''
-    def __init__(self, parent_element):
-        if parent_element.items():
-            self.update(dict(parent_element.items()))
-        for element in parent_element:
-            if element:
-                # treat like dict - we assume that if the first two tags
-                # in a series are different, then they are all different.
-                if len(element) == 1 or element[0].tag != element[1].tag:
-                    aDict = XmlDictConfig(element)
-                # treat like list - we assume that if the first two tags
-                # in a series are the same, then the rest are the same.
-                else:
-                    # here, we put the list in dictionary; the key is the
-                    # tag name the list elements all share in common, and
-                    # the value is the list itself 
-                    aDict = {element[0].tag: XmlListConfig(element)}
-                # if the tag has attributes, add those to the dict
-                if element.items():
-                    aDict.update(dict(element.items()))
-                self.update({element.tag: aDict})
-            # this assumes that if you've got an attribute in a tag,
-            # you won't be having any text. This may or may not be a 
-            # good idea -- time will tell. It works for the way we are
-            # currently doing XML configuration files...
-            elif element.items():
-                self.update({element.tag: dict(element.items())})
-            # finally, if there are no child tags and no attributes, extract
-            # the text
-            else:
-                self.update({element.tag: element.text})

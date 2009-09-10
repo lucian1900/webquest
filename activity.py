@@ -21,8 +21,13 @@ from gettext import gettext as _
 import gtk
 import telepathy
 import cjson
+from dbus.service import method, signal
+from dbus.gobject_service import ExportedGObject
 
 from sugar.activity import activity
+from sugar.graphics.alert import NotifyAlert
+from sugar.presence import presenceservice
+from sugar.presence.tubeconn import TubeConnection
 
 from toolbars import WebquestToolbar, BundleToolbar
 import feed
@@ -67,12 +72,23 @@ class WebquestActivity(activity.Activity):
         self._webquest_view = webquest.WebquestView()
         self._hbox.pack_start(self._webquest_view)
                                    
-        #self.connect('shared', self._shared_cb)
-        #self.connect('joined', self._joined_cb)
+        self.connect('shared', self._shared_cb)
+        self.connect('joined', self._joined_cb)
+        
+    def _alert(self, title, text=None):
+        alert = NotifyAlert(timeout=5)
+        alert.props.title = title
+        alert.props.msg = text
+        self.add_alert(alert)
+        alert.connect('response', self._alert_cancel_cb)
+        alert.show()
+
+    def _alert_cancel_cb(self, alert, response_id):
+        self.remove_alert(alert)
         
     def _shared_cb(self, activity):
         self._logger.debug('My activity was shared')
-        self._alert('Shared', 'The activity is shared')
+        #self._alert('Shared', 'The activity is shared')
         self.initiating = True
         self._sharing_setup()
 
@@ -85,7 +101,7 @@ class WebquestActivity(activity.Activity):
             return
 
         self._logger.debug('Joined an existing shared activity')
-        self._alert('Joined', 'Joined a shared activity')
+        #self._alert('Joined', 'Joined a shared activity')
         self.initiating = False
         self._sharing_setup()
 
@@ -185,3 +201,94 @@ class WebquestActivity(activity.Activity):
         
     def can_close(self):
         return True
+        
+class TextSync(ExportedGObject):
+    """The bit that talks over the TUBES!!!"""
+
+    def __init__(self, tube, is_initiator, text_received_cb,
+                 alert, get_buddy):
+        super(TextSync, self).__init__(tube, PATH)
+        self._logger = logging.getLogger('hellomesh-activity.TextSync')
+        self.tube = tube
+        self.is_initiator = is_initiator
+        self.text_received_cb = text_received_cb
+        self._alert = alert
+        self.entered = False  # Have we set up the tube?
+        self.text = '' # State that gets sent or received
+        self._get_buddy = get_buddy  # Converts handle to Buddy object
+        self.tube.watch_participants(self.participant_change_cb)
+
+    def participant_change_cb(self, added, removed):
+        self._logger.debug('Tube: Added participants: %r', added)
+        self._logger.debug('Tube: Removed participants: %r', removed)
+        for handle, bus_name in added:
+            buddy = self._get_buddy(handle)
+            if buddy is not None:
+                self._logger.debug('Tube: Handle %u (Buddy %s) was added',
+                                   handle, buddy.props.nick)
+        for handle in removed:
+            buddy = self._get_buddy(handle)
+            if buddy is not None:
+                self._logger.debug('Buddy %s was removed' % buddy.props.nick)
+        if not self.entered:
+            if self.is_initiator:
+                self._logger.debug("I'm initiating the tube, will "
+                    "watch for hellos.")
+                self.add_hello_handler()
+            else:
+                self._logger.debug('Hello, everyone! What did I miss?')
+                self.Hello()
+        self.entered = True
+
+    @signal(dbus_interface=IFACE, signature='')
+    def Hello(self):
+        """Say Hello to whoever else is in the tube."""
+        self._logger.debug('I said Hello.')
+
+    @method(dbus_interface=IFACE, in_signature='s', out_signature='')
+    def World(self, text):
+        """To be called on the incoming XO after they Hello."""
+        if not self.text:
+            self._logger.debug('Somebody called World and sent me %s',
+                               text)
+            self._alert('World', 'Received %s' % text)
+            self.text = text
+            self.text_received_cb(text)
+            # now I can World others
+            self.add_hello_handler()
+        else:
+            self._logger.debug("I've already been welcomed, doing nothing")
+
+    def add_hello_handler(self):
+        self._logger.debug('Adding hello handler.')
+        self.tube.add_signal_receiver(self.hello_cb, 'Hello', IFACE,
+            path=PATH, sender_keyword='sender')
+        self.tube.add_signal_receiver(self.sendtext_cb, 'SendText', IFACE,
+            path=PATH, sender_keyword='sender')
+
+    def hello_cb(self, sender=None):
+        """Somebody Helloed me. World them."""
+        if sender == self.tube.get_unique_name():
+            # sender is my bus name, so ignore my own signal
+            return
+        self._logger.debug('Newcomer %s has joined', sender)
+        self._logger.debug('Welcoming newcomer and sending them the game state')
+        self.tube.get_object(sender, PATH).World(self.text,
+                                                 dbus_interface=IFACE)
+
+    def sendtext_cb(self, text, sender=None):
+        """Handler for somebody sending SendText"""
+        if sender == self.tube.get_unique_name():
+            # sender is my bus name, so ignore my own signal
+            return
+        self._logger.debug('%s sent text %s', sender, text)
+        self._alert('sendtext_cb', 'Received %s' % text)
+        self.text = text
+        self.text_received_cb(text)
+
+    @signal(dbus_interface=IFACE, signature='s')
+    def SendText(self, text):
+        """Send some text to all participants."""
+        self.text = text
+        self._logger.debug('Sent text: %s', text)
+        self._alert('SendText', 'Sent %s' % text)
