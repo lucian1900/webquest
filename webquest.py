@@ -42,7 +42,7 @@ class WebquestView(gtk.ScrolledWindow):
         # icon & title
         self._icon = gtk.Image()
         #self._icon.set_from_file('filename')
-        self._hbox.pack_start(self._icon)
+        self._hbox.pack_start(self._icon, expand=False)
         self._icon.show()
         
         self._summary = gtk.Label()
@@ -88,11 +88,17 @@ class WebquestView(gtk.ScrolledWindow):
         self._buddies.props.headers_visible = False
         
     def set(self, uri, summary):
-        xml = urllib2.urlopen(uri).read()
+        try:
+            xml = urllib2.urlopen(uri).read()
+        except (urllib2.URLError, urllib2.HTTPError, IOError), e:
+            logging.debug('Error %s' % e)
+            self._activity._alert(_('Network error'), 
+                                  _('Couldn\'t download webquest data'))
+            return
+            
         feed = ElementTree.fromstring(xml).find('webquest')
         
-        self._summary.set_markup(summary)
-    
+        self._summary.set_markup(summary)    
         self._description.set_markup('<b>%s</b>\n' % _('Process Description') + 
                                      feed.find('process-description').text)
     
@@ -101,10 +107,10 @@ class WebquestView(gtk.ScrolledWindow):
             tasks_text += '%s. %s\n' % (i+1, e.find('task-description').text)
         self._tasks.set_markup(tasks_text)
         
-        model = self._resources.get_model()
-        for i in feed.find('references').getchildren():
-            model.append(['<u>%s</u>' % i.find('reference-description').text,
-                          i.find('url').text])
+        #model = self._resources.get_model()
+        #for i in feed.find('references').getchildren():
+        #    model.append(['<u>%s</u>' % i.find('reference-description').text,
+        #                  i.find('url').text])
         
     def add_buddy(self, nick):
         model = self._buddies.get_model()

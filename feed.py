@@ -73,18 +73,12 @@ class FeedList(gtk.ScrolledWindow):
     def update(self, uri):        
         try:
             xml = urllib2.urlopen(uri).read()
-        except urllib2.URLError, e:
-            logging.debug('url error %s' % e)
-            self._activity._alert(_('URL error'),
-                                  _('The URL entered cannot be found'))
-            return
-        except IOError, e:
-            logging.debug('io error %s' % e)
+        except (urllib2.URLError, urllib2.HTTPError, IOError), e:
+            logging.debug('Error %s' % e)
             self._activity._alert(_('Network error'), 
-                                  _('Couldn\'t download feed'))
+                                  _('Couldn\'t download webquest list'))
             return
 
-            
         self.uri = uri
         self._feed = ElementTree.fromstring(xml).find('channel')
         

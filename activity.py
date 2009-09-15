@@ -67,13 +67,13 @@ class WebquestActivity(activity.Activity):
         self._hbox.pack_start(self._feed_list)
         self._feed_list.show_all()
         self._feed_list.connect('item-selected', self.__show_webquest_cb)
-        #self.load_feed(self.DEFAULT_FEED_URI)     
+        self.load_feed(self.DEFAULT_FEED_URI)     
         
         self._webquest_view = webquest.WebquestView(self)
         self._hbox.pack_start(self._webquest_view)
                                    
-        self.connect('shared', self._shared_cb)
-        self.connect('joined', self._joined_cb)
+        #self.connect('shared', self._shared_cb)
+        #self.connect('joined', self._joined_cb)
         
     def _alert(self, title, text=None):
         alert = NotifyAlert(timeout=5)
@@ -173,7 +173,7 @@ class WebquestActivity(activity.Activity):
             tube_conn = TubeConnection(self.conn,
                 self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES],
                 id, group_iface=self.text_chan[telepathy.CHANNEL_INTERFACE_GROUP])
-            self.hellotube = TextSync(tube_conn, self.initiating,
+            self.hellotube = RolesSync(tube_conn, self.initiating,
                                       self.entry_text_update_cb,
                                       self._alert,
                                       self._get_buddy)
@@ -202,13 +202,13 @@ class WebquestActivity(activity.Activity):
     def can_close(self):
         return True
         
-class TextSync(ExportedGObject):
+class RolesSync(ExportedGObject):
     """The bit that talks over the TUBES!!!"""
 
     def __init__(self, tube, is_initiator, text_received_cb,
                  alert, get_buddy):
-        super(TextSync, self).__init__(tube, PATH)
-        self._logger = logging.getLogger('hellomesh-activity.TextSync')
+        super(RolesSync, self).__init__(tube, PATH)
+        self._logger = logging.getLogger('hellomesh-activity.RolesSync')
         self.tube = tube
         self.is_initiator = is_initiator
         self.text_received_cb = text_received_cb
