@@ -63,13 +63,13 @@ class WebquestActivity(activity.Activity):
         self.set_canvas(self._hbox)
         self._hbox.show()
         
-        self._feed_list = feed.FeedList()
+        self._feed_list = feed.FeedList(self)
         self._hbox.pack_start(self._feed_list)
         self._feed_list.show_all()
         self._feed_list.connect('item-selected', self.__show_webquest_cb)
         #self.load_feed(self.DEFAULT_FEED_URI)     
         
-        self._webquest_view = webquest.WebquestView()
+        self._webquest_view = webquest.WebquestView(self)
         self._hbox.pack_start(self._webquest_view)
                                    
         self.connect('shared', self._shared_cb)

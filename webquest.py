@@ -25,55 +25,51 @@ import pango
 class WebquestView(gtk.ScrolledWindow):
     __gtype_name__ = 'SugarWebquestView'
     
-    def __init__(self):
+    def __init__(self, act):
         gtk.ScrolledWindow.__init__(self)
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        
+        self._activity = act
                 
         self._vbox = gtk.VBox(spacing=2)
         self.add_with_viewport(self._vbox)
         self._vbox.show()
         
+        self._hbox = gtk.HBox(spacing=4)
+        self._vbox.pack_start(self._hbox)
+        self._hbox.show()
+        
+        # icon & title
+        self._icon = gtk.Image()
+        #self._icon.set_from_file('filename')
+        self._hbox.pack_start(self._icon)
+        self._icon.show()
+        
         self._summary = gtk.Label()
-        self._vbox.pack_start(self._summary, expand=True, fill=True)
+        self._hbox.pack_start(self._summary, expand=True, fill=True)
         self._summary.set_line_wrap(True)
         self._summary.show()
         
+        self._vbox_work = gtk.VBox()
+        self._vbox.pack_start(self._vbox_work)
+        self._vbox_work.show()
+        
         self._description = gtk.Label()
-        self._vbox.pack_start(self._description, expand=True, fill=True)
+        self._vbox_work.pack_start(self._description, expand=True, fill=True)
         #self._description.set_alignment(0.12,0)
         self._description.props.width_chars = 70
         self._description.set_line_wrap(True)
         self._description.show()
                 
         self._tasks = gtk.Label()
-        self._vbox.pack_start(self._tasks, expand=True, fill=True)
+        self._vbox_work.pack_start(self._tasks, expand=True, fill=True)
         #self._tasks.set_alignment(0.12,0)
         self._tasks.set_line_wrap(True)
         self._tasks.show()
         
-        # Resources list
-        self._resources = gtk.TreeView()
-        self._vbox.pack_start(self._resources)
-        self._resources.show()
-        
-        self._resources.set_model(gtk.ListStore(str, str))  
-        selection = self._resources.get_selection()
-        selection.connect('changed', self.__resource_selection_changed_cb)
-        
-        cell = gtk.CellRendererText()
-        cell.props.wrap_mode = pango.WRAP_WORD
-        cell.props.wrap_width = 800
-        column = gtk.TreeViewColumn()
-        column.pack_start(cell, expand=False)
-        column.add_attribute(cell, 'markup', 1)
-        
-        self._resources.append_column(column)
-        self._resources.set_search_column(0)
-        self._resources.props.headers_visible = False
-        
         # buddy list
         self._buddies = gtk.TreeView()
-        self._vbox.pack_start(self._buddies)
+        self._vbox_work.pack_start(self._buddies)
         self._buddies.show()
         
         self._buddies.set_model(gtk.ListStore(str, str))  

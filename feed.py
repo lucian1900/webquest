@@ -34,12 +34,13 @@ class FeedList(gtk.ScrolledWindow):
                           gobject.TYPE_NONE, ([str, str])),
     }
     
-    def __init__(self):
+    def __init__(self, act):
         gtk.ScrolledWindow.__init__(self)
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         
         self.uri = None
         self._feed = None
+        self._activity = act
         
         self._tree_view = gtk.TreeView()
         self.add_with_viewport(self._tree_view)
@@ -69,13 +70,26 @@ class FeedList(gtk.ScrolledWindow):
         
         self.emit('item-selected', uri, summary)
     
-    def update(self, uri):
+    def update(self, uri):        
+        try:
+            xml = urllib2.urlopen(uri).read()
+        except urllib2.URLError, e:
+            logging.debug('url error %s' % e)
+            self._activity._alert(_('URL error'),
+                                  _('The URL entered cannot be found'))
+            return
+        except IOError, e:
+            logging.debug('io error %s' % e)
+            self._activity._alert(_('Network error'), 
+                                  _('Couldn\'t download feed'))
+            return
+
+            
+        self.uri = uri
+        self._feed = ElementTree.fromstring(xml).find('channel')
+        
         model = self._tree_view.get_model()
         model.clear()
-        
-        self.uri = uri
-        xml = urllib2.urlopen(uri).read()
-        self._feed = ElementTree.fromstring(xml).find('channel')
         
         for i, e in enumerate(self._feed.findall('item')):
             title = u'<b>%s</b>' % e.find('title').text
