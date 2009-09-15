@@ -20,7 +20,7 @@ from gettext import gettext as _
 
 import gtk
 import telepathy
-import cjson
+import rsvg
 from dbus.service import method, signal
 from dbus.gobject_service import ExportedGObject
 
@@ -38,12 +38,17 @@ IFACE = SERVICE
 PATH = '/org/sugarlabs/Webquest'
 
 class WebquestActivity(activity.Activity):
-    DEFAULT_FEED_URI = 'http://webquest.rafaelsilva.net/webquest/feed'
+    DEFAULT_FEED_URI = 'http://www.rodrigopadula.com/webquest/webquest/feed'
     
     def __init__(self, handle):
         activity.Activity.__init__(self, handle)
         
         self._logger = logging.getLogger('webquest-activity')
+        
+        # render and cache Browse icon
+        svg_path = os.path.join(activity.get_bundle_path(), 'icons/browse.svg')
+        svg = rsvg.Handle(file=svg_path)
+        
         
         # toolbars
         toolbox = activity.ActivityToolbox(self)
