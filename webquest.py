@@ -50,13 +50,13 @@ class WebquestView(gtk.ScrolledWindow):
         self._vbox_work.show()
         
         self._description = gtk.Label()
-        self._description.set_size_request(700, -1)
+        self._description.set_size_request(gtk.gdk.screen_width() - 100, -1)
         self._vbox_work.pack_start(self._description, expand=True, fill=True)
         self._description.set_line_wrap(True)
         self._description.show()
                 
         self._tasks = gtk.Label()
-        self._tasks.set_size_request(700, -1)
+        self._tasks.set_size_request(gtk.gdk.screen_width() - 100, -1)
         self._vbox_work.pack_start(self._tasks, expand=True, fill=True)
         self._tasks.set_line_wrap(True)
         self._tasks.show()
@@ -72,7 +72,7 @@ class WebquestView(gtk.ScrolledWindow):
         
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
-        cell.props.wrap_width = 800
+        cell.props.wrap_width = gtk.gdk.screen_width()
         column = gtk.TreeViewColumn()
         column.pack_start(cell, expand=False)
         column.add_attribute(cell, 'markup', 1)

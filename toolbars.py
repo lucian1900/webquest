@@ -17,14 +17,21 @@
 from gettext import gettext as _
 import logging
 
+import gobject
 import gtk
 
 from sugar.graphics.toolbutton import ToolButton
 from sugar.graphics.alert import Alert
 from sugar.graphics.icon import Icon
-from sugar._sugarext import AddressEntry
 
 class WebquestToolbar(gtk.Toolbar):
+    __gtype_name__ = "SugarWebquestToolbar"
+    
+    __gsignals__ = {
+        'toggle-send': (gobject.SIGNAL_RUN_FIRST,
+                          gobject.TYPE_NONE, ([])),
+    }
+    
     def __init__(self, act):
         gtk.Toolbar.__init__(self)
         
@@ -53,6 +60,12 @@ class WebquestToolbar(gtk.Toolbar):
         self.insert(self._refresh, -1)
         self._refresh.show()
         
+        self._send = ToolButton('save-document')
+        self._send.set_tooltip(_('Send'))
+        self._send.connect('clicked', self.__toggle_send_cb)
+        self.insert(self._send, -1)
+        self._send.show()
+        
     def __entry_activate_cb(self, entry):
         self._activity.load_feed(entry.get_text())
         
@@ -61,25 +74,12 @@ class WebquestToolbar(gtk.Toolbar):
         
     def __refresh_cb(self, button):
         self._activity.load_feed(entry.get_text())
+        
+    def __toggle_send_cb(self, button):
+        self.emit('toggle-send')
                 
     def enable_back(self):
         self._back.props.sensitive = True
     
     def disable_back(self):
         self._back.props.sensitive = False
-        
-class BundleToolbar(gtk.Toolbar):
-    def __init__(self, act):
-        gtk.Toolbar.__init__(self)
-    
-        self._activity = act
-        
-        self._get = ToolButton('save-document')
-        self._get.set_tooltip(_('Add from Journal'))
-        self._get.props.sensitive = False
-        self._get.connect('clicked', self.__get_cb)
-        self.insert(self._get, -1)
-        self._get.show()
-        
-    def __get_cb(self, button):
-        pass

@@ -29,9 +29,10 @@ from sugar.graphics.alert import NotifyAlert
 from sugar.presence import presenceservice
 from sugar.presence.tubeconn import TubeConnection
 
-from toolbars import WebquestToolbar, BundleToolbar
+from toolbars import WebquestToolbar
 import feed
 import webquest
+import send
 
 SERVICE = 'org.sugarlabs.Webquest'
 IFACE = SERVICE
@@ -46,18 +47,15 @@ class WebquestActivity(activity.Activity):
         self._logger = logging.getLogger('webquest-activity')
         
         # render and cache Browse icon
-        svg_path = os.path.join(activity.get_bundle_path(), 'icons/browse.svg')
-        svg = rsvg.Handle(file=svg_path)
-        
+        #svg_path = os.path.join(activity.get_bundle_path(), 'icons/browse.svg')
+        #svg = rsvg.Handle(file=svg_path)
         
         # toolbars
         toolbox = activity.ActivityToolbox(self)
         
         self._webq_toolbar = WebquestToolbar(self)
         toolbox.add_toolbar(_('Webquests'), self._webq_toolbar)
-        
-        self._bundle_toolbar = BundleToolbar(self)
-        toolbox.add_toolbar(_('Bundle'), self._bundle_toolbar)
+        self._webq_toolbar.connect('toggle-send', self._toggle_send_cb)
         
         self.set_toolbox(toolbox)
         self.toolbox.set_current_toolbar(1)
@@ -76,6 +74,9 @@ class WebquestActivity(activity.Activity):
         
         self._webquest_view = webquest.WebquestView(self)
         self._hbox.pack_start(self._webquest_view)
+        
+        # send bundle window
+        self._bundle_win = send.BundleView()
                                    
         #self.connect('shared', self._shared_cb)
         #self.connect('joined', self._joined_cb)
@@ -91,6 +92,12 @@ class WebquestActivity(activity.Activity):
     def _alert_cancel_cb(self, alert, response_id):
         self.remove_alert(alert)
         
+    def _toggle_send_cb(self, toolbar):
+        if self._bundle_win.props.visible:
+            self._bundle_win.hide()
+        else:
+            self._bundle_win.show()
+            
     def _shared_cb(self, activity):
         self._logger.debug('My activity was shared')
         #self._alert('Shared', 'The activity is shared')

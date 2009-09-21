@@ -51,7 +51,7 @@ class FeedList(gtk.ScrolledWindow):
                 
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
-        cell.props.wrap_width = 800
+        cell.props.wrap_width = gtk.gdk.screen_width()
         column = gtk.TreeViewColumn()
         column.pack_start(cell, expand=False)
         column.add_attribute(cell, 'markup', 1)
