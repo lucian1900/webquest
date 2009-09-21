@@ -38,13 +38,8 @@ class WebquestView(gtk.ScrolledWindow):
         self._hbox = gtk.HBox(spacing=4)
         self._vbox.pack_start(self._hbox)
         self._hbox.show()
-        
-        # icon & title
-        self._icon = gtk.Image()
-        #self._icon.set_from_file('filename')
-        self._hbox.pack_start(self._icon, expand=False)
-        self._icon.show()
-        
+
+        # title
         self._summary = gtk.Label()
         self._hbox.pack_start(self._summary, expand=True, fill=True)
         self._summary.set_line_wrap(True)
@@ -55,15 +50,14 @@ class WebquestView(gtk.ScrolledWindow):
         self._vbox_work.show()
         
         self._description = gtk.Label()
+        self._description.set_size_request(700, -1)
         self._vbox_work.pack_start(self._description, expand=True, fill=True)
-        #self._description.set_alignment(0.12,0)
-        self._description.props.width_chars = 70
         self._description.set_line_wrap(True)
         self._description.show()
                 
         self._tasks = gtk.Label()
+        self._tasks.set_size_request(700, -1)
         self._vbox_work.pack_start(self._tasks, expand=True, fill=True)
-        #self._tasks.set_alignment(0.12,0)
         self._tasks.set_line_wrap(True)
         self._tasks.show()
         
