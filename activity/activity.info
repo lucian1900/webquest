@@ -1,5 +1,5 @@
 [Activity]
-name = Webquest
+name = WebQuest
 activity_version = 1
 bundle_id = org.sugarlabs.WebquestActivity
 icon = activity-webquest
