@@ -16,6 +16,7 @@
 
 from gettext import gettext as _
 import logging
+import urllib2
 
 import gobject
 import gtk
@@ -29,8 +30,9 @@ class BundleView(gtk.Window):
         
         self.set_decorated(False)
         self.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        self.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
         self.set_border_width(style.LINE_WIDTH)
-        
+                
         width = gtk.gdk.screen_width() - style.GRID_CELL_SIZE * 2
         height = gtk.gdk.screen_height() - style.GRID_CELL_SIZE * 2
         self.set_size_request(width, height)
@@ -67,7 +69,7 @@ class BundleView(gtk.Window):
         self._tree_view = gtk.TreeView()
         sw.add(self._tree_view)
         
-        self._tree_view.set_model(gtk.ListStore(int, str))  
+        self._tree_view.set_model(gtk.ListStore(str, str))  
         selection = self._tree_view.get_selection()
                 
         cell = gtk.CellRendererText()
@@ -75,7 +77,7 @@ class BundleView(gtk.Window):
         cell.props.wrap_width = gtk.gdk.screen_width()
         column = gtk.TreeViewColumn()
         column.pack_start(cell, expand=False)
-        column.add_attribute(cell, 'markup', 1)
+        column.add_attribute(cell, 'text', 1)
         
         self._tree_view.append_column(column)
         self._tree_view.set_search_column(0)
@@ -83,11 +85,17 @@ class BundleView(gtk.Window):
         
         self._tree_view.show()
     
-    def __add_cb(self, button):
-        pass
+    def __add_cb(self, button, response_id):
+        model = self._tree_view.get_model()
         
-    def __send_cb(self, button):
-        pass
+        model.append(['journal id', 'obj name'])
+        
+    def __send_cb(self, button, response_id):
+        model = self._tree_view.get_model()
+        
+        
+        model.clear()
+        self.hide()
         
 class Toolbar(gtk.Toolbar):
     pass

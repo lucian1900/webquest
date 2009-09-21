@@ -40,6 +40,7 @@ PATH = '/org/sugarlabs/Webquest'
 
 class WebquestActivity(activity.Activity):
     DEFAULT_FEED_URI = 'http://www.rodrigopadula.com/webquest/webquest/feed'
+    DEFAULT_SEND_URI = 'http://www.rodrigopadula.com/webquest/upload'
     
     def __init__(self, handle):
         activity.Activity.__init__(self, handle)
@@ -93,6 +94,9 @@ class WebquestActivity(activity.Activity):
         self.remove_alert(alert)
         
     def _toggle_send_cb(self, toolbar):
+        #if not self._bundle_win.props.has_focus:
+        #    self._bundle_win.hide()
+        
         if self._bundle_win.props.visible:
             self._bundle_win.hide()
         else:
