@@ -60,7 +60,7 @@ class WebquestToolbar(gtk.Toolbar):
         self.insert(self._refresh, -1)
         self._refresh.show()
         
-        self._send = ToolButton('save-document')
+        self._send = ToolButton('activity-journal')
         self._send.set_tooltip(_('Send'))
         self._send.connect('clicked', self.__toggle_send_cb)
         self.insert(self._send, -1)
