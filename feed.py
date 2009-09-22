@@ -92,9 +92,9 @@ class FeedList(gtk.ScrolledWindow):
             try:
                 t = time.strptime(e.find('pubDate').text, 
                                   "%a, %m/%d/%Y - %H:%M")
-            except ValueError, e:
+            except ValueError, err:
                 date += _('unknown')
-                logging.debug('Problem decoding date: %s' % e)
+                logging.debug('Problem decoding date: %s' % err)
             else:
                 date += time.strftime('%d %b %Y', t)
                 
