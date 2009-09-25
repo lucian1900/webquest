@@ -23,6 +23,7 @@ import gtk
 from sugar.graphics.toolbutton import ToolButton
 from sugar.graphics.alert import Alert
 from sugar.graphics.icon import Icon
+from sugar.graphics.objectchooser import ObjectChooser
 
 class WebquestToolbar(gtk.Toolbar):
     __gtype_name__ = "SugarWebquestToolbar"
@@ -62,7 +63,7 @@ class WebquestToolbar(gtk.Toolbar):
         
         self._send = ToolButton('activity-journal')
         self._send.set_tooltip(_('Send'))
-        self._send.connect('clicked', self.__toggle_send_cb)
+        self._send.connect('clicked', self.__send_cb)
         self.insert(self._send, -1)
         self._send.show()
         
@@ -75,8 +76,17 @@ class WebquestToolbar(gtk.Toolbar):
     def __refresh_cb(self, button):
         self._activity.load_feed(entry.get_text())
         
-    def __toggle_send_cb(self, button):
-        self.emit('toggle-send')
+    def __send_cb(self, button):
+        chooser = ObjectChooser()
+        try:
+            result = chooser.run()
+            if result == gtk.RESPONSE_ACCEPT:
+                jobject = chooser.get_selected_object()
+                if jobject and jobject.file_path:
+                    logging.debug('##### %s' % jobject.file_path)
+        finally:
+            chooser.destroy()
+            del chooser        
                 
     def enable_back(self):
         self._back.props.sensitive = True
