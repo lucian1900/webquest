@@ -152,22 +152,12 @@ class WebquestActivity(activity.Activity):
                                
 
     def _buddy_joined_cb (self, activity, buddy):
-        """Called when a buddy joins the shared activity.
-
-        This doesn't do much here as HelloMesh doesn't have much 
-        functionality. It's up to you do do interesting things
-        with the Buddy...
-        """
+        'Called when a buddy joins the shared activity.'
         self._logger.debug('Buddy %s joined', buddy.props.nick)
         self._webquest_view.add_buddy(buddy.props.nick)
 
     def _buddy_left_cb (self, activity, buddy):
-        """Called when a buddy leaves the shared activity.
-
-        This doesn't do much here as HelloMesh doesn't have much 
-        functionality. It's up to you do do interesting things
-        with the Buddy...
-        """
+        'Called when a buddy leaves the shared activity.'
         self._logger.debug('Buddy %s left', buddy.props.nick)
         self._webquest_view.remove_buddy(buddy.props.nick)
         
@@ -219,12 +209,10 @@ class WebquestActivity(activity.Activity):
         return True
         
 class RolesSync(ExportedGObject):
-    """The bit that talks over the TUBES!!!"""
-
     def __init__(self, tube, is_initiator, text_received_cb,
                  alert, get_buddy):
         super(RolesSync, self).__init__(tube, PATH)
-        self._logger = logging.getLogger('hellomesh-activity.RolesSync')
+        self._logger = logging.getLogger('webquest-activity.RolesSync')
         self.tube = tube
         self.is_initiator = is_initiator
         self.text_received_cb = text_received_cb
