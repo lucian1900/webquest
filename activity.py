@@ -20,9 +20,7 @@ from gettext import gettext as _
 
 import gtk
 import telepathy
-import rsvg
-from dbus.service import method, signal
-from dbus.gobject_service import ExportedGObject
+import telepathy.client
 
 from sugar.activity import activity
 from sugar.graphics.alert import NotifyAlert
@@ -30,6 +28,7 @@ from sugar.presence import presenceservice
 from sugar.presence.tubeconn import TubeConnection
 
 from toolbars import WebquestToolbar
+from messenger import Messenger
 import feed
 import webquest
 import send
@@ -79,8 +78,9 @@ class WebquestActivity(activity.Activity):
         # send bundle window
         self._bundle_win = send.BundleView()
                                    
-        #self.connect('shared', self._shared_cb)
-        #self.connect('joined', self._joined_cb)
+        self.messenger = None
+        self.connect('shared', self._shared_cb)
+        self.connect('joined', self._joined_cb)
         
     def _alert(self, title, text=None):
         alert = NotifyAlert(timeout=5)
@@ -127,29 +127,52 @@ class WebquestActivity(activity.Activity):
             error_handler=self._list_tubes_error_cb)
             
     def _sharing_setup(self):
-        if self.shared_activity is None:
-            self._logger.error('Failed to share or join activity')
+        if self._shared_activity is None:
+            _logger.debug('Failed to share or join activity')
             return
 
-        self.conn = self.shared_activity.telepathy_conn
-        self.tubes_chan = self.shared_activity.telepathy_tubes_chan
-        self.text_chan = self.shared_activity.telepathy_text_chan
+        bus_name, conn_path, channel_paths = \
+                self._shared_activity.get_channels()
 
-        self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].connect_to_signal(
-            'NewTube', self._new_tube_cb)
+        # Work out what our room is called and whether we have Tubes already
+        room = None
+        tubes_chan = None
+        text_chan = None
+        for channel_path in channel_paths:
+            channel = telepathy.client.Channel(bus_name, channel_path)
+            htype, handle = channel.GetHandle()
+            if htype == telepathy.HANDLE_TYPE_ROOM:
+                _logger.debug('Found our room: it has handle#%d "%s"' 
+                   %(handle, self.conn.InspectHandles(htype, [handle])[0]))
+                room = handle
+                ctype = channel.GetChannelType()
+                if ctype == telepathy.CHANNEL_TYPE_TUBES:
+                    _logger.debug('Found our Tubes channel at %s'%channel_path)
+                    tubes_chan = channel
+                elif ctype == telepathy.CHANNEL_TYPE_TEXT:
+                    _logger.debug('Found our Text channel at %s'%channel_path)
+                    text_chan = channel
 
-        self.shared_activity.connect('buddy-joined', self._buddy_joined_cb)
-        self.shared_activity.connect('buddy-left', self._buddy_left_cb)
+        if room is None:
+            _logger.debug("Presence service didn't create a room")
+            return
+        if text_chan is None:
+            _logger.debug("Presence service didn't create a text channel")
+            return
 
-        self.entry.set_sensitive(True)
-        self.entry.grab_focus()
+        # Make sure we have a Tubes channel - PS doesn't yet provide one
+        if tubes_chan is None:
+            _logger.debug("Didn't find our Tubes channel, requesting one...")
+            tubes_chan = self.conn.request_channel( \
+                                                  telepathy.CHANNEL_TYPE_TUBES,
+                                                  telepathy.HANDLE_TYPE_ROOM, 
+                                                  room, True)
+                                                  
+        self.tubes_chan = tubes_chan
+        self.text_chan = text_chan
 
-        # Optional - included for example:
-        # Find out who's already in the shared activity:
-        for buddy in self.shared_activity.get_joined_buddies():
-            self._logger.debug('Buddy %s is already in the activity',
-                               buddy.props.nick)
-                               
+        tubes_chan[telepathy.CHANNEL_TYPE_TUBES].connect_to_signal( \
+               'NewTube', self._new_tube_cb)
 
     def _buddy_joined_cb (self, activity, buddy):
         'Called when a buddy joins the shared activity.'
@@ -168,21 +191,25 @@ class WebquestActivity(activity.Activity):
     def _list_tubes_error_cb(self, e):
         self._logger.error('ListTubes() failed: %s', e)
         
-    def _new_tube_cb(self, id, initiator, type, service, params, state):
-        self._logger.debug('New tube: ID=%d initator=%d type=%d service=%s '
-                     'params=%r state=%d', id, initiator, type, service,
-                     params, state)
+    def _new_tube_cb(self, identifier, initiator, type, service, params, state):
+        _logger.debug('New tube: ID=%d initator=%d type=%d service=%s '
+                      'params=%r state=%d' %(identifier, initiator, type, 
+                                             service, params, state))
+
         if (type == telepathy.TUBE_TYPE_DBUS and
             service == SERVICE):
             if state == telepathy.TUBE_STATE_LOCAL_PENDING:
-                self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].AcceptDBusTube(id)
-            tube_conn = TubeConnection(self.conn,
-                self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES],
-                id, group_iface=self.text_chan[telepathy.CHANNEL_INTERFACE_GROUP])
-            self.hellotube = RolesSync(tube_conn, self.initiating,
-                                      self.entry_text_update_cb,
-                                      self._alert,
-                                      self._get_buddy)
+                self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].AcceptDBusTube(
+                        identifier)
+
+            self.tube_conn = TubeConnection(self.conn, 
+                self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES], 
+                identifier, group_iface = self.text_chan[
+                    telepathy.CHANNEL_INTERFACE_GROUP])
+
+            _logger.debug('Tube created')
+            self.messenger = Messenger(self.tube_conn, self.initiating, 
+                                       self.model)
           
     def __show_webquest_cb(self, feed_list, uri, summary):
         self._webquest_view.set(uri, summary)
@@ -207,92 +234,3 @@ class WebquestActivity(activity.Activity):
         
     def can_close(self):
         return True
-        
-class RolesSync(ExportedGObject):
-    def __init__(self, tube, is_initiator, text_received_cb,
-                 alert, get_buddy):
-        super(RolesSync, self).__init__(tube, PATH)
-        self._logger = logging.getLogger('webquest-activity.RolesSync')
-        self.tube = tube
-        self.is_initiator = is_initiator
-        self.text_received_cb = text_received_cb
-        self._alert = alert
-        self.entered = False  # Have we set up the tube?
-        self.text = '' # State that gets sent or received
-        self._get_buddy = get_buddy  # Converts handle to Buddy object
-        self.tube.watch_participants(self.participant_change_cb)
-
-    def participant_change_cb(self, added, removed):
-        self._logger.debug('Tube: Added participants: %r', added)
-        self._logger.debug('Tube: Removed participants: %r', removed)
-        for handle, bus_name in added:
-            buddy = self._get_buddy(handle)
-            if buddy is not None:
-                self._logger.debug('Tube: Handle %u (Buddy %s) was added',
-                                   handle, buddy.props.nick)
-        for handle in removed:
-            buddy = self._get_buddy(handle)
-            if buddy is not None:
-                self._logger.debug('Buddy %s was removed' % buddy.props.nick)
-        if not self.entered:
-            if self.is_initiator:
-                self._logger.debug("I'm initiating the tube, will "
-                    "watch for hellos.")
-                self.add_hello_handler()
-            else:
-                self._logger.debug('Hello, everyone! What did I miss?')
-                self.Hello()
-        self.entered = True
-
-    @signal(dbus_interface=IFACE, signature='')
-    def Hello(self):
-        """Say Hello to whoever else is in the tube."""
-        self._logger.debug('I said Hello.')
-
-    @method(dbus_interface=IFACE, in_signature='s', out_signature='')
-    def World(self, text):
-        """To be called on the incoming XO after they Hello."""
-        if not self.text:
-            self._logger.debug('Somebody called World and sent me %s',
-                               text)
-            self._alert('World', 'Received %s' % text)
-            self.text = text
-            self.text_received_cb(text)
-            # now I can World others
-            self.add_hello_handler()
-        else:
-            self._logger.debug("I've already been welcomed, doing nothing")
-
-    def add_hello_handler(self):
-        self._logger.debug('Adding hello handler.')
-        self.tube.add_signal_receiver(self.hello_cb, 'Hello', IFACE,
-            path=PATH, sender_keyword='sender')
-        self.tube.add_signal_receiver(self.sendtext_cb, 'SendText', IFACE,
-            path=PATH, sender_keyword='sender')
-
-    def hello_cb(self, sender=None):
-        """Somebody Helloed me. World them."""
-        if sender == self.tube.get_unique_name():
-            # sender is my bus name, so ignore my own signal
-            return
-        self._logger.debug('Newcomer %s has joined', sender)
-        self._logger.debug('Welcoming newcomer and sending them the game state')
-        self.tube.get_object(sender, PATH).World(self.text,
-                                                 dbus_interface=IFACE)
-
-    def sendtext_cb(self, text, sender=None):
-        """Handler for somebody sending SendText"""
-        if sender == self.tube.get_unique_name():
-            # sender is my bus name, so ignore my own signal
-            return
-        self._logger.debug('%s sent text %s', sender, text)
-        self._alert('sendtext_cb', 'Received %s' % text)
-        self.text = text
-        self.text_received_cb(text)
-
-    @signal(dbus_interface=IFACE, signature='s')
-    def SendText(self, text):
-        """Send some text to all participants."""
-        self.text = text
-        self._logger.debug('Sent text: %s', text)
-        self._alert('SendText', 'Sent %s' % text)
