@@ -102,7 +102,7 @@ class Messenger(ExportedGObject):
         
     @dbus.service.method(dbus_interface=IFACE, in_signature='ssssssd', 
                          out_signature='')
-    def send_link(self, identifier, url, title, color, owner, buf, timestamp):
+    def send_role(self, identifier, url, title, color, owner, buf, timestamp):
         '''Send link'''
         a_ids = self.model.get_links_ids()
         if identifier not in a_ids:
@@ -110,16 +110,16 @@ class Messenger(ExportedGObject):
             self.model.add_link(url, title, thumb, owner, color, timestamp)
                     
     @dbus.service.signal(IFACE, signature='sssssd')
-    def _add_link(self, url, title, color, owner, thumb, timestamp):        
+    def _add_role(self, url, title, color, owner, thumb, timestamp):        
         '''Signal to send the link information (add)'''
         _logger.debug('Add Link: %s '%url)
         
-    def _add_link_receiver(self, url, title, color, owner, buf, timestamp, 
+    def _add_role_receiver(self, url, title, color, owner, buf, timestamp, 
                            sender=None):
-        '''Member sent a link'''
+        '''Member sent a role'''
         handle = self.tube.bus_name_to_handle[sender]            
         if self.tube.self_handle != handle:
-            thumb = base64.b64decode(buf)
-            self.model.add_link(url, title, thumb, owner, color, timestamp) 
-            _logger.debug('Added link: %s to linkbar.'%(url))
-    
+        #    thumb = base64.b64decode(buf)
+        #    self.model.add_link(url, title, thumb, owner, color, timestamp) 
+        #    _logger.debug('Added link: %s to linkbar.'%(url))
+            pass

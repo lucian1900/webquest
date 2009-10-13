@@ -31,7 +31,6 @@ from toolbars import WebquestToolbar
 from messenger import Messenger
 import feed
 import webquest
-import send
 
 SERVICE = 'org.sugarlabs.Webquest'
 IFACE = SERVICE
@@ -122,10 +121,10 @@ class WebquestActivity(activity.Activity):
         self._sharing_setup()
 
         self._logger.debug('This is not my activity: waiting for a tube...')
-        self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].ListTubes(
+        self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].ListTubes( \
             reply_handler=self._list_tubes_reply_cb,
             error_handler=self._list_tubes_error_cb)
-            
+        
     def _sharing_setup(self):
         if self._shared_activity is None:
             _logger.debug('Failed to share or join activity')
