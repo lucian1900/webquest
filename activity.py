@@ -31,6 +31,7 @@ from toolbars import WebquestToolbar
 from messenger import Messenger
 import feed
 import webquest
+import send
 
 SERVICE = 'org.sugarlabs.Webquest'
 IFACE = SERVICE
