@@ -61,6 +61,19 @@ class WebquestView(gtk.ScrolledWindow):
         self._tasks.set_line_wrap(True)
         self._tasks.show()
         
+        # me
+        self._hbox_me = gtk.HBox()
+        self._vbox_work.pack_start(self._hbox_me)
+        self._hbox_me.show()
+        
+        self._me = gtk.Label(_('My role'))
+        self._hbox_me.pack_start(self._me, expand=True, fill=True)
+        self._me.show()
+        
+        self._my_role = gtk.Entry()
+        self._hbox_me.pack_start(self._my_role, expand=True, fill=True)
+        self._my_role.show()
+        
         # buddy list
         self._buddies = gtk.TreeView()
         self._vbox_work.pack_start(self._buddies)

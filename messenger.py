@@ -52,7 +52,7 @@ class Messenger(ExportedGObject):
                 _logger.debug('Remove member %r - already absent', handle)
                         
         if not self.entered:
-            self.tube.add_signal_receiver(self._add_link_receiver, '_add_link',
+            self.tube.add_signal_receiver(self._add_role_receiver, '_add_role',
                                           IFACE, path=PATH,
                                           sender_keyword='sender',
                                           byte_arrays=True)
@@ -67,7 +67,7 @@ class Messenger(ExportedGObject):
                     if member != self.bus_name:
                         _logger.debug('Get info from %s' %member)
                         self.tube.get_object(member, PATH).sync_with_members(
-                            self.model.get_links_ids(), dbus_interface=IFACE,
+                            dbus_interface=IFACE,
                             reply_handler=self.reply_sync, error_handler=lambda
                             e:self.error_sync(e, 'transfering file'))
                                                                          
@@ -90,32 +90,27 @@ class Messenger(ExportedGObject):
         '''Sync with members '''
         b_ids.pop()
         # links the caller wants from me
-        for link in self.model.data['shared_links']:
-            if link['hash'] not in b_ids:
-                self.tube.get_object(sender, PATH).send_link(
-                    link['hash'], link['url'], link['title'], link['color'],
-                    link['owner'], link['thumb'], link['timestamp'])
+        self.tube.get_object(sender, PATH).send_role('hash', 'owner', 'role')
         a_ids = self.model.get_links_ids()
         a_ids.append('')
         # links I want from the caller
         return (a_ids, self.bus_name)               
         
-    @dbus.service.method(dbus_interface=IFACE, in_signature='ssssssd', 
+    @dbus.service.method(dbus_interface=IFACE, in_signature='sss', 
                          out_signature='')
-    def send_role(self, identifier, url, title, color, owner, buf, timestamp):
+    def send_role(self, identifier, owner, role):
         '''Send link'''
         a_ids = self.model.get_links_ids()
         if identifier not in a_ids:
             thumb = base64.b64decode(buf)
             self.model.add_link(url, title, thumb, owner, color, timestamp)
                     
-    @dbus.service.signal(IFACE, signature='sssssd')
-    def _add_role(self, url, title, color, owner, thumb, timestamp):        
+    @dbus.service.signal(IFACE, signature='sss')
+    def _add_role(self, identifier, owner, role):        
         '''Signal to send the link information (add)'''
         _logger.debug('Add Link: %s '%url)
         
-    def _add_role_receiver(self, url, title, color, owner, buf, timestamp, 
-                           sender=None):
+    def _add_role_receiver(self, identifier, owner, role):
         '''Member sent a role'''
         handle = self.tube.bus_name_to_handle[sender]            
         if self.tube.self_handle != handle:
