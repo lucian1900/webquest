@@ -72,6 +72,7 @@ class WebquestView(gtk.ScrolledWindow):
         
         self._my_role = gtk.Entry()
         self._hbox_me.pack_start(self._my_role, expand=True, fill=True)
+        self._my_role.connect('activate', self.__my_role_activate_cb)
         self._my_role.show()
         
         # buddy list
@@ -132,6 +133,9 @@ class WebquestView(gtk.ScrolledWindow):
         if nick == user_data:
             model.remove(tree_iter)
             
+    def __my_role_activate_cb(self, entry):
+        self._activity.send_role(entry.get_text())
+    
     def __resource_selection_changed_cb(self, selection):
         pass
     

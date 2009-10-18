@@ -226,6 +226,9 @@ class WebquestActivity(activity.Activity):
         logging.debug('Loading feed from %s' % uri)
         self._feed_list.update(uri)
         
+    def send_role(self, role):
+        pass
+        
     def read_file(self, file_path):
         pass
         
