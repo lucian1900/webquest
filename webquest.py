@@ -56,7 +56,7 @@ class WebquestView(gtk.ScrolledWindow):
         self._description.show()
         
         self._web_link = gtk.Label()
-        self._web_link..set_size_request(gtk.gdk.screen_width() - 100, -1)
+        self._web_link.set_size_request(gtk.gdk.screen_width() - 100, -1)
         self._vbox_work.pack_start(self._web_link, expand=True, fill=True)
         self._web_link.set_selectable(True)
         self._web_link.show()
