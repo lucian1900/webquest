@@ -54,6 +54,12 @@ class WebquestView(gtk.ScrolledWindow):
         self._vbox_work.pack_start(self._description, expand=True, fill=True)
         self._description.set_line_wrap(True)
         self._description.show()
+        
+        self._web_link = gtk.Label()
+        self._web_link..set_size_request(gtk.gdk.screen_width() - 100, -1)
+        self._vbox_work.pack_start(self._web_link, expand=True, fill=True)
+        self._web_link.set_selectable(True)
+        self._web_link.show()
                 
         self._tasks = gtk.Label()
         self._tasks.set_size_request(gtk.gdk.screen_width() - 100, -1)
@@ -109,6 +115,8 @@ class WebquestView(gtk.ScrolledWindow):
         self._summary.set_markup(summary)    
         self._description.set_markup('<b>%s</b>\n' % _('Process Description') + 
                                      feed.find('process-description').text)
+    
+        self._web_link.set_text(_('Link: ') + uri)
     
         tasks_text = u'<b>%s</b>\n' % _('Tasks')
         for i, e in enumerate(feed.find('tasks').getchildren()):
