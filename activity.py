@@ -208,8 +208,8 @@ class WebquestActivity(activity.Activity):
             self.messenger = Messenger(self.tube_conn, self.initiating, 
                                        self.model)
           
-    def __show_webquest_cb(self, feed_list, uri, summary):
-        self._webquest_view.set(uri, summary)
+    def __show_webquest_cb(self, feed_list, uri, summary, web_uri):
+        self._webquest_view.set(uri, summary, web_uri)
         self._feed_list.hide()
         self._webquest_view.show()
         self._webq_toolbar.enable_back()

@@ -31,7 +31,7 @@ class FeedList(gtk.ScrolledWindow):
     
     __gsignals__ = {
         'item-selected': (gobject.SIGNAL_RUN_FIRST,
-                          gobject.TYPE_NONE, ([str, str])),
+                          gobject.TYPE_NONE, ([str, str, str])),
     }
     
     def __init__(self, act):
@@ -66,9 +66,10 @@ class FeedList(gtk.ScrolledWindow):
         model, tree_iter = selection.get_selected()
         index = model.get_value(tree_iter, 0)
         uri = self._feed.findall('item')[index].find('source').attrib['url']
+        web_uri = self._feed.findall('item')[index].find('link').text
         summary = model.get_value(tree_iter, 1)
         
-        self.emit('item-selected', uri, summary)
+        self.emit('item-selected', uri, summary, web_uri)
     
     def update(self, uri):        
         try:

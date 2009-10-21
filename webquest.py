@@ -49,15 +49,9 @@ class WebquestView(gtk.ScrolledWindow):
         self._vbox.pack_start(self._vbox_work)
         self._vbox_work.show()
         
-        self._link = gtk.Label()
-        self._link.set_markup('<b>Link</b>')
-        self._link.set_size_request(gtk.gdk.screen_width() - 100, -1)
-        self._hbox_link.pack_start(self._link, expand=True, fill=True)
-        self._link.show()
-        
         self._web_link = gtk.Label()
         self._web_link.set_size_request(gtk.gdk.screen_width() - 100, -1)
-        self._hbox_link.pack_start(self._web_link, expand=True, fill=True)
+        self._vbox_work.pack_start(self._web_link, expand=True, fill=True)
         self._web_link.set_selectable(True)
         self._web_link.show()
         
@@ -112,7 +106,7 @@ class WebquestView(gtk.ScrolledWindow):
         self._buddies.set_search_column(0)
         self._buddies.props.headers_visible = False
         
-    def set(self, uri, summary):
+    def set(self, uri, summary, web_uri):
         try:
             xml = urllib2.urlopen(uri).read()
         except (urllib2.URLError, urllib2.HTTPError, IOError), e:
@@ -127,7 +121,7 @@ class WebquestView(gtk.ScrolledWindow):
         self._description.set_markup('<b>%s</b>\n' % _('Process Description') + 
                                      feed.find('process-description').text)
     
-        self._web_link.set_text(uri)
+        self._web_link.set_markup('<b>%s</b>: %s' % (_('Link'), web_uri))
     
         tasks_text = u'<b>%s</b>\n' % _('Tasks')
         for i, e in enumerate(feed.find('tasks').getchildren()):
