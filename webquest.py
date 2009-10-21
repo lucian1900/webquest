@@ -49,10 +49,6 @@ class WebquestView(gtk.ScrolledWindow):
         self._vbox.pack_start(self._vbox_work)
         self._vbox_work.show()
         
-        self._hbox_link = gtk.HBox()
-        self._vbox_work.pack_start(self._hbox_link)
-        self._hbox_link.show()
-        
         self._link = gtk.Label()
         self._link.set_markup('<b>Link</b>')
         self._link.set_size_request(gtk.gdk.screen_width() - 100, -1)
@@ -86,6 +82,7 @@ class WebquestView(gtk.ScrolledWindow):
         self._me.show()
         
         self._my_role = gtk.ComboBox()
+        self._my_role.set_model(gtk.ListStore(str))
         self._my_role.connect('changed', self.__role_changed_cb)
         self._hbox_me.pack_start(self._my_role)
         self._my_role.show()
