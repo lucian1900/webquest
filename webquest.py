@@ -138,9 +138,9 @@ class WebquestView(gtk.ScrolledWindow):
             for i in roles.getchildren():
                 model.append([i.find('description').text])
             
-        # add buddies
-        for nick, role in self._activity.model.roles.items():
-            self.add_buddy(nick, role)
+            # add buddies
+            for nick, role in self._activity.model.roles.items():
+                self.add_buddy(nick, role)
         
     def add_buddy(self, nick, role):
         model = self._buddies.get_model()
