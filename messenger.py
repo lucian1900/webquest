@@ -74,13 +74,10 @@ class Messenger(ExportedGObject):
         self.entered = True
         
     def reply_sync(self, a_ids, sender):
-        a_ids.pop()        
-        #for link in self.model.data['shared_links']:
-        #    if link['hash'] not in a_ids:
-        #        self.tube.get_object(sender, PATH).send_link(
-        #            link['hash'], link['url'], link['title'], link['color'],
-        #            link['owner'], link['thumb'], link['timestamp'])
-            
+        a_ids.pop()
+        self.tube.get_object(sender, PATH).send_role(sender, 
+                                                     self.model.my_role)
+
     def error_sync(self, e, when):    
         _logger.error('Error %s: %s'%(when, e))
 
@@ -89,21 +86,19 @@ class Messenger(ExportedGObject):
     def sync_with_members(self, b_ids, sender=None):
         '''Sync with members '''
         b_ids.pop()
-        # links the caller wants from me
-        self.tube.get_object(sender, PATH).send_role('hash', 'owner', 'role')
-        a_ids = self.model.get_links_ids()
+        # roles the caller wants from me
+        self.tube.get_object(sender, PATH).send_role('owner', 'role')
+        a_ids = self.model.get_roles_ids()
         a_ids.append('')
-        # links I want from the caller
+        # roles I want from the caller
         return (a_ids, self.bus_name)               
         
-    @dbus.service.method(dbus_interface=IFACE, in_signature='sss', 
+    @dbus.service.method(dbus_interface=IFACE, in_signature='ss', 
                          out_signature='')
-    def send_role(self, identifier, owner, role):
-        '''Send link'''
-        a_ids = self.model.get_links_ids()
+    def send_role(self, owner, role):
+        a_ids = self.model.get_roles_ids()
         if identifier not in a_ids:
-            thumb = base64.b64decode(buf)
-            self.model.add_link(url, title, thumb, owner, color, timestamp)
+            self.model.add_role(owner, role)
                     
     @dbus.service.signal(IFACE, signature='sss')
     def _add_role(self, identifier, owner, role):        

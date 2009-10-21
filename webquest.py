@@ -49,17 +49,27 @@ class WebquestView(gtk.ScrolledWindow):
         self._vbox.pack_start(self._vbox_work)
         self._vbox_work.show()
         
+        self._hbox_link = gtk.HBox()
+        self._vbox_work.pack_start(self._hbox_link)
+        self._hbox_link.show()
+        
+        self._link = gtk.Label()
+        self._link.set_markup('<b>Link</b>')
+        self._link.set_size_request(gtk.gdk.screen_width() - 100, -1)
+        self._hbox_link.pack_start(self._link, expand=True, fill=True)
+        self._link.show()
+        
+        self._web_link = gtk.Label()
+        self._web_link.set_size_request(gtk.gdk.screen_width() - 100, -1)
+        self._hbox_link.pack_start(self._web_link, expand=True, fill=True)
+        self._web_link.set_selectable(True)
+        self._web_link.show()
+        
         self._description = gtk.Label()
         self._description.set_size_request(gtk.gdk.screen_width() - 100, -1)
         self._vbox_work.pack_start(self._description, expand=True, fill=True)
         self._description.set_line_wrap(True)
         self._description.show()
-        
-        self._web_link = gtk.Label()
-        self._web_link.set_size_request(gtk.gdk.screen_width() - 100, -1)
-        self._vbox_work.pack_start(self._web_link, expand=True, fill=True)
-        self._web_link.set_selectable(True)
-        self._web_link.show()
                 
         self._tasks = gtk.Label()
         self._tasks.set_size_request(gtk.gdk.screen_width() - 100, -1)
@@ -70,14 +80,12 @@ class WebquestView(gtk.ScrolledWindow):
         # me
         self._hbox_me = gtk.HBox()
         self._vbox_work.pack_start(self._hbox_me)
-        self._hbox_me.show()
         
         self._me = gtk.Label(_('My role'))
         self._hbox_me.pack_start(self._me)
         self._me.show()
         
         self._my_role = gtk.ComboBox()
-        self._my_role.set_model(gtk.ListStore(str))
         self._my_role.connect('changed', self.__role_changed_cb)
         self._hbox_me.pack_start(self._my_role)
         self._my_role.show()
@@ -85,7 +93,6 @@ class WebquestView(gtk.ScrolledWindow):
         # buddy list
         self._buddies = gtk.TreeView()
         self._vbox_work.pack_start(self._buddies)
-        self._buddies.show()
         
         self._buddies.set_model(gtk.ListStore(str, str))  
         selection = self._buddies.get_selection()
@@ -123,26 +130,30 @@ class WebquestView(gtk.ScrolledWindow):
         self._description.set_markup('<b>%s</b>\n' % _('Process Description') + 
                                      feed.find('process-description').text)
     
-        self._web_link.set_text(_('Link: ') + uri)
+        self._web_link.set_text(uri)
     
         tasks_text = u'<b>%s</b>\n' % _('Tasks')
         for i, e in enumerate(feed.find('tasks').getchildren()):
             tasks_text += '%s. %s\n' % (i+1, e.find('task-description').text)
         self._tasks.set_markup(tasks_text)
         
-        model = self._my_role.get_model()
-        logging.debug('##### %s' % feed.find('roles').text)
-        for i in feed.find('roles').getchildren():
-            logging.debug('$$$$$ %s' % i.text)
-            model.append([i.find('description').text])
+        # my role, filling the combobox
+        roles = feed.find('roles')
+        if roles is not None:
+            self._my_role.show()
+            self._buddies.show()
             
-        self.add_buddy('John')
-        self.add_buddy('Joe')
-        self.add_buddy('Jack')
+            model = self._my_role.get_model()
+            for i in roles.getchildren():
+                model.append([i.find('description').text])
+            
+        # add buddies
+        for nick, role in self._activity.model.roles.items():
+            self.add_buddy(nick, role)
         
-    def add_buddy(self, nick):
+    def add_buddy(self, nick, role):
         model = self._buddies.get_model()
-        model.append([nick, _('none')])        
+        model.append([nick, role])        
         
     def remove_buddy(self, nick):
         model = self._buddies.get_model()
@@ -153,8 +164,11 @@ class WebquestView(gtk.ScrolledWindow):
         if nick == user_data:
             model.remove(tree_iter)
             
-    def __role_changed_cb(combobox):
-        pass
+    def __role_changed_cb(self, combobox):
+        model = combobox.get_model()
+        index = combobox.get_active()
+        
+        self._activity.model.my_role = index
             
     def __my_role_activate_cb(self, entry):
         self._activity._my_role = entry.get_text()

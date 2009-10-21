@@ -32,6 +32,7 @@ from messenger import Messenger
 import feed
 import webquest
 import send
+import model
 
 SERVICE = 'org.sugarlabs.Webquest'
 IFACE = SERVICE
@@ -45,10 +46,6 @@ class WebquestActivity(activity.Activity):
     
     def __init__(self, handle):
         activity.Activity.__init__(self, handle)
-                
-        # render and cache Browse icon
-        #svg_path = os.path.join(activity.get_bundle_path(), 'icons/browse.svg')
-        #svg = rsvg.Handle(file=svg_path)
         
         # toolbars
         toolbox = activity.ActivityToolbox(self)
@@ -74,11 +71,10 @@ class WebquestActivity(activity.Activity):
         
         self._webquest_view = webquest.WebquestView(self)
         self._hbox.pack_start(self._webquest_view)
-        
-        # send bundle window
-        self._bundle_win = send.BundleView()
                                    
+        self.model = model.Model()
         self.messenger = None
+        
         self.connect('shared', self._shared_cb)
         self.connect('joined', self._joined_cb)
         
@@ -143,7 +139,8 @@ class WebquestActivity(activity.Activity):
             htype, handle = channel.GetHandle()
             if htype == telepathy.HANDLE_TYPE_ROOM:
                 _logger.debug('Found our room: it has handle#%d "%s"' 
-                   %(handle, self.conn.InspectHandles(htype, [handle])[0]))
+                   %(handle, self.tube_conn.InspectHandles(htype,
+                                                           [handle])[0]))
                 room = handle
                 ctype = channel.GetChannelType()
                 if ctype == telepathy.CHANNEL_TYPE_TUBES:
@@ -163,7 +160,7 @@ class WebquestActivity(activity.Activity):
         # Make sure we have a Tubes channel - PS doesn't yet provide one
         if tubes_chan is None:
             _logger.debug("Didn't find our Tubes channel, requesting one...")
-            tubes_chan = self.conn.request_channel( \
+            tubes_chan = self.tube_conn.request_channel( \
                                                   telepathy.CHANNEL_TYPE_TUBES,
                                                   telepathy.HANDLE_TYPE_ROOM, 
                                                   room, True)
