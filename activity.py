@@ -37,15 +37,15 @@ SERVICE = 'org.sugarlabs.Webquest'
 IFACE = SERVICE
 PATH = '/org/sugarlabs/Webquest'
 
+_logger = logging.getLogger('webquest-activity')
+
 class WebquestActivity(activity.Activity):
     DEFAULT_FEED_URI = 'http://www.rodrigopadula.com/webquest/webquest/feed'
     DEFAULT_SEND_URI = 'http://www.rodrigopadula.com/webquest/upload'
     
     def __init__(self, handle):
         activity.Activity.__init__(self, handle)
-        
-        self._logger = logging.getLogger('webquest-activity')
-        
+                
         # render and cache Browse icon
         #svg_path = os.path.join(activity.get_bundle_path(), 'icons/browse.svg')
         #svg = rsvg.Handle(file=svg_path)
@@ -103,12 +103,12 @@ class WebquestActivity(activity.Activity):
             self._bundle_win.show()
             
     def _shared_cb(self, activity):
-        self._logger.debug('My activity was shared')
+        _logger.debug('My activity was shared')
         #self._alert('Shared', 'The activity is shared')
         self.initiating = True
         self._sharing_setup()
 
-        self._logger.debug('This is my activity: making a tube...')
+        _logger.debug('This is my activity: making a tube...')
         id = self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].OfferDBusTube(
             SERVICE, {})
         
@@ -116,12 +116,12 @@ class WebquestActivity(activity.Activity):
         if not self.shared_activity:
             return
 
-        self._logger.debug('Joined an existing shared activity')
+        _logger.debug('Joined an existing shared activity')
         #self._alert('Joined', 'Joined a shared activity')
         self.initiating = False
         self._sharing_setup()
 
-        self._logger.debug('This is not my activity: waiting for a tube...')
+        _logger.debug('This is not my activity: waiting for a tube...')
         self.tubes_chan[telepathy.CHANNEL_TYPE_TUBES].ListTubes( \
             reply_handler=self._list_tubes_reply_cb,
             error_handler=self._list_tubes_error_cb)
@@ -176,12 +176,12 @@ class WebquestActivity(activity.Activity):
 
     def _buddy_joined_cb (self, activity, buddy):
         'Called when a buddy joins the shared activity.'
-        self._logger.debug('Buddy %s joined', buddy.props.nick)
+        _logger.debug('Buddy %s joined', buddy.props.nick)
         self._webquest_view.add_buddy(buddy.props.nick)
 
     def _buddy_left_cb (self, activity, buddy):
         'Called when a buddy leaves the shared activity.'
-        self._logger.debug('Buddy %s left', buddy.props.nick)
+        _logger.debug('Buddy %s left', buddy.props.nick)
         self._webquest_view.remove_buddy(buddy.props.nick)
         
     def _list_tubes_reply_cb(self, tubes):
@@ -189,7 +189,7 @@ class WebquestActivity(activity.Activity):
             self._new_tube_cb(*tube_info)
 
     def _list_tubes_error_cb(self, e):
-        self._logger.error('ListTubes() failed: %s', e)
+        _logger.error('ListTubes() failed: %s', e)
         
     def _new_tube_cb(self, identifier, initiator, type, service, params, state):
         _logger.debug('New tube: ID=%d initator=%d type=%d service=%s '
@@ -225,9 +225,6 @@ class WebquestActivity(activity.Activity):
     def load_feed(self, uri):
         logging.debug('Loading feed from %s' % uri)
         self._feed_list.update(uri)
-        
-    def send_role(self, role):
-        pass
         
     def read_file(self, file_path):
         pass

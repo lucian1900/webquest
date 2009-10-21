@@ -73,12 +73,13 @@ class WebquestView(gtk.ScrolledWindow):
         self._hbox_me.show()
         
         self._me = gtk.Label(_('My role'))
-        self._hbox_me.pack_start(self._me, expand=True, fill=True)
+        self._hbox_me.pack_start(self._me)
         self._me.show()
         
-        self._my_role = gtk.Entry()
-        self._hbox_me.pack_start(self._my_role, expand=True, fill=True)
-        self._my_role.connect('activate', self.__my_role_activate_cb)
+        self._my_role = gtk.ComboBox()
+        self._my_role.set_model(gtk.ListStore(str))
+        self._my_role.connect('changed', self.__role_changed_cb)
+        self._hbox_me.pack_start(self._my_role)
         self._my_role.show()
         
         # buddy list
@@ -92,12 +93,18 @@ class WebquestView(gtk.ScrolledWindow):
         
         cell = gtk.CellRendererText()
         cell.props.wrap_mode = pango.WRAP_WORD
-        cell.props.wrap_width = gtk.gdk.screen_width()
-        column = gtk.TreeViewColumn()
-        column.pack_start(cell, expand=False)
-        column.add_attribute(cell, 'markup', 1)
+        cell.props.wrap_width = gtk.gdk.screen_width() - 200
         
-        self._buddies.append_column(column)
+        column_nick = gtk.TreeViewColumn()
+        column_nick.pack_start(cell, expand=False)
+        column_nick.add_attribute(cell, 'markup', 0)
+        
+        column_role = gtk.TreeViewColumn()
+        column_role.pack_start(cell, expand=False)
+        column_role.add_attribute(cell, 'markup', 1)
+        
+        self._buddies.append_column(column_nick)
+        self._buddies.append_column(column_role)
         self._buddies.set_search_column(0)
         self._buddies.props.headers_visible = False
         
@@ -123,10 +130,15 @@ class WebquestView(gtk.ScrolledWindow):
             tasks_text += '%s. %s\n' % (i+1, e.find('task-description').text)
         self._tasks.set_markup(tasks_text)
         
-        #model = self._resources.get_model()
-        #for i in feed.find('references').getchildren():
-        #    model.append(['<u>%s</u>' % i.find('reference-description').text,
-        #                  i.find('url').text])
+        model = self._my_role.get_model()
+        logging.debug('##### %s' % feed.find('roles').text)
+        for i in feed.find('roles').getchildren():
+            logging.debug('$$$$$ %s' % i.text)
+            model.append([i.find('description').text])
+            
+        self.add_buddy('John')
+        self.add_buddy('Joe')
+        self.add_buddy('Jack')
         
     def add_buddy(self, nick):
         model = self._buddies.get_model()
@@ -141,8 +153,11 @@ class WebquestView(gtk.ScrolledWindow):
         if nick == user_data:
             model.remove(tree_iter)
             
+    def __role_changed_cb(combobox):
+        pass
+            
     def __my_role_activate_cb(self, entry):
-        self._activity.send_role(entry.get_text())
+        self._activity._my_role = entry.get_text()
     
     def __resource_selection_changed_cb(self, selection):
         pass

@@ -74,7 +74,7 @@ class Messenger(ExportedGObject):
         self.entered = True
         
     def reply_sync(self, a_ids, sender):
-        a_ids.pop()                    
+        a_ids.pop()        
         #for link in self.model.data['shared_links']:
         #    if link['hash'] not in a_ids:
         #        self.tube.get_object(sender, PATH).send_link(
@@ -107,7 +107,7 @@ class Messenger(ExportedGObject):
                     
     @dbus.service.signal(IFACE, signature='sss')
     def _add_role(self, identifier, owner, role):        
-        '''Signal to send the link information (add)'''
+        '''Signal to send the role information (add)'''
         _logger.debug('Add Link: %s '%url)
         
     def _add_role_receiver(self, identifier, owner, role):
